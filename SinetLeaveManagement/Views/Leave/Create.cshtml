@@ -1,0 +1,36 @@
+﻿@model SinetLeaveManagement.Models.ViewModels.LeaveRequestViewModel
+
+@{
+    ViewData["Title"] = "Request Leave";
+}
+
+<h2 class="mb-4">Request Leave</h2>
+
+<form asp-action="Create" method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <div class="mb-2">
+        <label asp-for="StartDate"></label>
+        <input asp-for="StartDate" class="form-control" />
+        <span asp-validation-for="StartDate" class="text-danger"></span>
+    </div>
+
+    <div class="mb-2">
+        <label asp-for="EndDate"></label>
+        <input asp-for="EndDate" class="form-control" />
+        <span asp-validation-for="EndDate" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Reason"></label>
+        <textarea asp-for="Reason" class="form-control"></textarea>
+        <span asp-validation-for="Reason" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit Leave Request</button>
+</form>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,18 @@
+﻿<canvas id="leaveChart"></canvas>
+<script src="~/lib/chart.js/chart.min.js"></script>
+<script>
+    fetch('/Dashboard/GetStats')
+        .then(r => r.json())
+        .then(data => {
+            new Chart(document.getElementById('leaveChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Total', 'Approved', 'Pending', 'Rejected'],
+                    datasets: [{
+                        data: [data.total, data.approved, data.pending, data.rejected],
+                        backgroundColor: ['#36A2EB','#4BC0C0','#FFCE56','#FF6384']
+                    }]
+                }
+            });
+        });
+</script>

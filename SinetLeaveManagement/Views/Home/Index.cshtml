@@ -1,0 +1,13 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using SinetLeaveManagement.Data
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+@{
+    var userManager = Context.RequestServices.GetService<UserManager<ApplicationUser>>();
+    var db = Context.RequestServices.GetService<ApplicationDbContext>();
+    var user = userManager?.GetUserAsync(User).Result;
+    var count = user != null ? db.Notifications.Count(n => n.UserId == user.Id && !n.IsRead) : 0;
+}
+@await Html.PartialAsync("_NotificationBadge", count)

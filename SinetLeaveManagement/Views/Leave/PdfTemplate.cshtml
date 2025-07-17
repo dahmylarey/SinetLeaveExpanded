@@ -1,0 +1,11 @@
+﻿@model SinetLeaveManagement.Models.LeaveRequest
+@{
+    Layout = null;
+}
+<h2>Leave Request #@Model.Id</h2>
+<p><strong>Requested By:</strong> @Model.RequestingUser?.FirstName @Model.RequestingUser?.LastName</p>
+<p><strong>Start Date:</strong> @Model.StartDate.ToShortDateString()</p>
+<p><strong>End Date:</strong> @Model.EndDate.ToShortDateString()</p>
+<p><strong>Reason:</strong> @Model.Reason</p>
+<p><strong>Status:</strong> @Model.Status</p>
+<p><small>Requested At: @Model.RequestedAt.ToLocalTime()</small></p>
