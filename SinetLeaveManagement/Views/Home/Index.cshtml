@@ -3,11 +3,17 @@
 @using Microsoft.AspNetCore.Identity
 @using SinetLeaveManagement.Data
 @{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Home";
 }
+<div class="container mt-4">
+    <h2>Welcome to Sinet Leave Management!</h2>
 
-<h2>Welcome</h2>
-<p>You have @Model.UnreadNotificationCount unread notifications.</p>
+    <p>You have <strong>@Model.UnreadNotificationCount</strong> unread notification(s).</p>
+
+    <a class="btn btn-primary" asp-controller="Leave" asp-action="Notifications">
+        View Notifications
+    </a>
+</div>
 
 
 @{
