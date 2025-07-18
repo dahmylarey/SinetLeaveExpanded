@@ -118,7 +118,7 @@ namespace SinetLeaveManagement.Services
             _context.AuditLogs.Add(new AuditLog
             {
                 Action = action,
-                PerformedBy = performedByUserId,
+                PerformedByUserId = performedByUserId,
                 LeaveRequestId = leaveRequestId,
                 Details = details,
                 Timestamp = DateTime.UtcNow
@@ -129,7 +129,8 @@ namespace SinetLeaveManagement.Services
         public async Task<List<AuditLog>> GetAuditLogsAsync()
         {
             return await _context.AuditLogs
-                .Include(a => a.PerformedBy)
+                .Include(a => a.PerformedByUser)
+                .Include(a => a.LeaveRequest)
                 .OrderByDescending(a => a.Timestamp)
                 .ToListAsync();
         }

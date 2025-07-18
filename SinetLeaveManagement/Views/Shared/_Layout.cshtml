@@ -15,7 +15,9 @@
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="container-fluid">
                 <a class="navbar-brand" href="/">Sinet Leave Management</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#navbarNav" aria-controls="navbarNav"
+                        aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
@@ -34,7 +36,6 @@
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Account" asp-action="Register">Register User</a>
                             </li>
-
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Leave" asp-action="AuditLogs">Audit Logs</a>
                             </li>
@@ -45,7 +46,9 @@
                         {
                             <li class="nav-item">
                                 <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                    <button type="submit" class="nav-link btn btn-link text-white" style="cursor:pointer;">Logout (@User.Identity.Name)</button>
+                                    <button type="submit" class="nav-link btn btn-link text-white" style="cursor:pointer;">
+                                        Logout (@User.Identity.Name)
+                                    </button>
                                 </form>
                             </li>
                             <li class="nav-item">
@@ -76,27 +79,18 @@
         </div>
     </footer>
 
-    <!-- Scripts load order: jQuery → Bootstrap → SignalR → Toastr → site.js -->
+    
+
+
+    <!-- Scripts load order -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Use CDN or local SignalR (pick one). Recommended: CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
-
-    @section Scripts {
-        <script>
-            $(function () {
-                var success = '@TempData["Success"]';
-                var error = '@TempData["Error"]';
-                if (success) { toastr.success(success); }
-                if (error) { toastr.error(error); }
-            });
-        </script>
-    }
+    <input type="hidden" id="TempDataSuccess" value="@TempData["Success"]" />
+    <input type="hidden" id="TempDataError" value="@TempData["Error"]" />
 </body>
 </html>

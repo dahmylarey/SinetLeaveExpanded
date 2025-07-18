@@ -3,13 +3,12 @@
     ViewData["Title"] = "Audit Logs";
 }
 
-<h2>@ViewData["Title"]</h2>
-
-<table class="table table-striped table-bordered mt-3">
+<h2>Audit Logs</h2>
+<table class="table table-bordered">
     <tr>
         <th>Timestamp</th>
         <th>Action</th>
-        <th>By</th>
+        <th>Performed By</th>
         <th>Leave Request Id</th>
         <th>Details</th>
     </tr>
@@ -18,10 +17,9 @@
         <tr>
             <td>@log.Timestamp.ToLocalTime()</td>
             <td>@log.Action</td>
-            <td>@log.PerformedBy</td>
+            <td>@log.PerformedByUser?.UserName</td>
             <td>@log.LeaveRequestId</td>
             <td>@log.Details</td>
         </tr>
     }
 </table>
-<a asp-action="Index" class="btn btn-secondary mt-2">Back</a>

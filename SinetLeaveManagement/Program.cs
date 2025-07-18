@@ -1,63 +1,50 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
 using SinetLeaveManagement.Data;
 using SinetLeaveManagement.Hubs;
+using SinetLeaveManagement.Mapping;
 using SinetLeaveManagement.Models;
 using SinetLeaveManagement.Services;
-using SinetLeaveManagement.Mapping;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//Configure Serilog logging
-builder.Host.UseSerilog((ctx, lc) => lc
-    .WriteTo.Console()
-    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day));
+// Add services to the container.
+builder.Services.AddControllersWithViews();
 
-//Configure EF Core & SQL Server (localdb / adjust as needed)
+// ✅ Entity Framework Core with SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-//Configure Identity with custom ApplicationUser & Roles
-builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
+// ✅ Identity
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = false;
-    options.Password.RequireDigit = false;
-    options.Password.RequiredLength = 6;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireLowercase = false;
-    options.Password.RequireNonAlphanumeric = false;
+    options.SignIn.RequireConfirmedEmail = true;  // recommend requiring email confirmation
 })
-.AddRoles<IdentityRole>()
-.AddEntityFrameworkStores<ApplicationDbContext>();
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
 
-//Register your services properly
+// ✅ Register your custom services
 builder.Services.AddScoped<ILeaveService, LeaveService>();
-builder.Services.AddScoped<IEmailService, EmailService>();  
-builder.Services.AddScoped<IPdfService, PdfService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
-//Add AutoMapper for mapping between models and view models
-builder.Services.AddAutoMapper(typeof(Program));
+//AutoMapper (using MappingProfile or your own)
+builder.Services.AddAutoMapper(typeof(Profile));
 
-//Add SignalR
+//SignalR
 builder.Services.AddSignalR();
 
-//Add MVC & runtime compilation
-builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
-
-//Add Razor Pages if using Identity UI
-builder.Services.AddRazorPages();
+//Configure cookie paths (so it uses your custom Login view)
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+    options.SlidingExpiration = true;
+});
 
 var app = builder.Build();
 
-//Seed roles/admin user (once on startup)
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    await SeedData.InitializeAsync(services);
-}
-
-//Configure middleware
+// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -69,16 +56,14 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthentication();
+app.UseAuthentication();   // 🔑 Identity
 app.UseAuthorization();
 
-//Map SignalR hub
-app.MapHub<NotificationHub>("/notificationHub");
-
-//Map controllers & Identity pages
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Leave}/{action=Index}/{id?}");
-app.MapRazorPages();
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Map SignalR hub
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();

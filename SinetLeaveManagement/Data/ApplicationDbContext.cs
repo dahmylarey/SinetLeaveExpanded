@@ -19,22 +19,29 @@ namespace SinetLeaveManagement.Data
         {
             base.OnModelCreating(builder);
 
-            // Notification: User ↔ Notifications
             builder.Entity<Notification>()
                 .HasOne(n => n.User)
                 .WithMany(u => u.Notifications)
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // LeaveRequest: RequestingUser ↔ LeaveRequests
             builder.Entity<LeaveRequest>()
                 .HasOne(l => l.RequestingUser)
                 .WithMany(u => u.LeaveRequests)
                 .HasForeignKey(l => l.RequestingUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // 🔥 Removed: builder.Entity<AuditLog>().HasOne...
-            // Since PerformedBy is just a string, no relationship needed
+            builder.Entity<AuditLog>()
+                .HasOne(a => a.PerformedByUser)
+                .WithMany()
+                .HasForeignKey(a => a.PerformedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<AuditLog>()
+                .HasOne(a => a.LeaveRequest)
+                .WithMany()
+                .HasForeignKey(a => a.LeaveRequestId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

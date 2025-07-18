@@ -20,6 +20,11 @@ namespace SinetLeaveManagement.Mapping
             // Entity → ViewModel
             CreateMap<LeaveRequest, LeaveRequestViewModel>().ReverseMap();
 
+            
+
+            // Add more mappings here if needed, e.g.
+            CreateMap<ApplicationUser, UserViewModel>().ReverseMap();
+
         }
     }
 }
