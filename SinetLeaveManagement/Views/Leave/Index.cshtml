@@ -12,13 +12,13 @@
 
 @{
     ViewData["Title"] = "Leaves";
-}
+}<br />
 
-<h1>Index</h1>
+
 
 <p>
     <a asp-action="Create">Create New</a>
-</p><br />
+</p>
 
 <form asp-action="Index" method="get" class="form-inline mb-2">
     <input type="text" name="search" value="@Context.Request.Query["search"]" class="form-control mr-2" placeholder="Search by status or user"><br />

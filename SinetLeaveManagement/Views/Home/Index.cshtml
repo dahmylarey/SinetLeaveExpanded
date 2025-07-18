@@ -1,8 +1,14 @@
-﻿@using Microsoft.AspNetCore.Identity
+﻿@model SinetLeaveManagement.Models.ViewModels.HomeIndexViewModel
+
+@using Microsoft.AspNetCore.Identity
 @using SinetLeaveManagement.Data
 @{
     ViewData["Title"] = "Home Page";
 }
+
+<h2>Welcome</h2>
+<p>You have @Model.UnreadNotificationCount unread notifications.</p>
+
 
 @{
     var userManager = Context.RequestServices.GetService<UserManager<ApplicationUser>>();

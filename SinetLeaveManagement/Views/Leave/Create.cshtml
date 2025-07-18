@@ -2,12 +2,12 @@
 
 @{
     ViewData["Title"] = "Request Leave";
-}
+}<br />
 
 <h2 class="mb-4">Request Leave</h2>
 
 <form asp-action="Create" method="post">
-    <div asp-validation-summary="All" class="text-danger"></div>
+    @* <div asp-validation-summary="All" class="text-danger"></div> *@
 
     <div class="mb-2">
         <label asp-for="StartDate"></label>
@@ -24,7 +24,7 @@
     <div class="mb-3">
         <label asp-for="Reason"></label>
         <textarea asp-for="Reason" class="form-control"></textarea>
-        <span asp-validation-for="Reason" class="text-danger"></span>
+       @* <span asp-validation-for="Reason" class="text-danger"></span> *@
     </div>
 
     <button type="submit" class="btn btn-primary">Submit Leave Request</button>
