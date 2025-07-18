@@ -1,9 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore; // Needed for ToListAsync
-using SinetLeaveManagement.Data;
 using SinetLeaveManagement.Hubs;
 using SinetLeaveManagement.Models;
 using SinetLeaveManagement.Models.ViewModels;
@@ -23,20 +22,20 @@ namespace SinetLeaveManagement.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEmailService _emailService;
         private readonly IHubContext<NotificationHub> _hubContext;
-        private readonly ApplicationDbContext _context; // For saving notifications
+        private readonly IMapper _mapper;
 
         public LeaveController(
             ILeaveService leaveService,
             UserManager<ApplicationUser> userManager,
             IEmailService emailService,
             IHubContext<NotificationHub> hubContext,
-            ApplicationDbContext context)
+            IMapper mapper)
         {
             _leaveService = leaveService;
             _userManager = userManager;
             _emailService = emailService;
             _hubContext = hubContext;
-            _context = context;
+            _mapper = mapper;
         }
 
         // GET: /Leave
@@ -46,7 +45,6 @@ namespace SinetLeaveManagement.Controllers
             bool isAdminOrManager = await _userManager.IsInRoleAsync(user, "Admin") || await _userManager.IsInRoleAsync(user, "Manager");
 
             var requests = await _leaveService.GetAllLeaveRequestsAsync();
-
             var query = isAdminOrManager
                 ? requests.AsQueryable()
                 : requests.Where(l => l.RequestingUserId == user.Id).AsQueryable();
@@ -59,18 +57,16 @@ namespace SinetLeaveManagement.Controllers
                     l.RequestingUser.LastName.Contains(search));
             }
 
-            var pagedList = query
-                .OrderByDescending(l => l.RequestedAt)
-                .ToPagedList(page, 5); // 5 per page
-
+            var pagedList = query.OrderByDescending(l => l.RequestedAt).ToPagedList(page, 5);
             return View(pagedList);
         }
 
         // GET: /Leave/Create
-        public IActionResult Create(LeaveRequest model) => View();
+        public IActionResult Create() => View();
 
         // POST: /Leave/Create
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(LeaveRequestViewModel model)
         {
             if (!ModelState.IsValid)
@@ -80,29 +76,89 @@ namespace SinetLeaveManagement.Controllers
             }
 
             var user = await _userManager.GetUserAsync(User);
+            var leave = _mapper.Map<LeaveRequest>(model);
+            leave.RequestingUserId = user.Id;
+            leave.Status = "Pending";
+            leave.RequestedAt = DateTime.UtcNow;
 
-            var leave = new LeaveRequest
-            {
-                StartDate = model.StartDate,
-                EndDate = model.EndDate,
-                Reason = model.Reason,
-                RequestingUserId = user.Id,
-                Status = "Pending",
-                RequestedAt = DateTime.UtcNow
-            };
-
-            await _leaveService.CreateLeaveRequestAsync(leave);
+            await _leaveService.CreateLeaveRequestAsync(leave, user.Id);
             await _hubContext.Clients.All.SendAsync("ReceiveNotification", "New leave request submitted.");
+            await _leaveService.AddAuditLogAsync("Create", user.Id, leave.Id, "Created leave request");
 
             TempData["Success"] = "Leave request submitted successfully!";
             return RedirectToAction(nameof(Index));
         }
 
+        // GET: /Leave/Edit/5
+        public async Task<IActionResult> Edit(int id)
+        {
+            var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
+            if (leave == null) return NotFound();
 
-        //Approve
-        [Authorize(Roles = "Admin, Manager, HR")]
+            var user = await _userManager.GetUserAsync(User);
+            bool canEdit = leave.RequestingUserId == user.Id || await _userManager.IsInRoleAsync(user, "Admin");
+            if (!canEdit) return Forbid();
+
+            var model = _mapper.Map<LeaveRequestViewModel>(leave);
+            return View(model);
+        }
+
+        // POST: /Leave/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, LeaveRequestViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var user = await _userManager.GetUserAsync(User);
+            var updatedLeave = _mapper.Map<LeaveRequest>(model);
+
+            await _leaveService.UpdateLeaveRequestAsync(id, updatedLeave);
+            await _leaveService.AddAuditLogAsync("Edit", user.Id, id, "Edited leave request");
+
+            TempData["Success"] = "Leave request updated!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // GET: /Leave/Details/5
+        public async Task<IActionResult> Details(int id)
+        {
+            var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
+            if (leave == null) return NotFound();
+            return View(leave);
+        }
+
+        // GET: /Leave/Delete/5
+        public async Task<IActionResult> Delete(int id)
+        {
+            var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
+            if (leave == null) return NotFound();
+
+            var user = await _userManager.GetUserAsync(User);
+            bool canDelete = leave.RequestingUserId == user.Id || await _userManager.IsInRoleAsync(user, "Admin");
+            if (!canDelete) return Forbid();
+
+            return View(leave);
+        }
+
+        // POST: /Leave/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            await _leaveService.DeleteLeaveRequestAsync(id);
+            await _leaveService.AddAuditLogAsync("Delete", user.Id, id, "Deleted leave request");
+
+            TempData["Success"] = "Leave request deleted!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Approve
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Approve(int id)
         {
+            var user = await _userManager.GetUserAsync(User);
             var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
             if (leave == null)
             {
@@ -110,24 +166,11 @@ namespace SinetLeaveManagement.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            await _leaveService.ApproveLeaveRequestAsync(id);
+            await _leaveService.ApproveLeaveRequestAsync(id, user.Id);
+            await _leaveService.AddAuditLogAsync("Approve", user.Id, id, "Approved leave request");
 
-            var user = await _userManager.FindByIdAsync(leave.RequestingUserId);
-
-            //Send email
-            await _emailService.SendEmailAsync(user.Email, "Leave Approved", $"Your leave request #{id} has been approved.");
-
-            //Add notification to DB
-            _context.Notifications.Add(new Notification
-            {
-                UserId = user.Id,
-                Message = $"Your leave request #{id} has been approved.",
-                IsRead = false,
-                CreatedAt = DateTime.UtcNow
-            });
-            await _context.SaveChangesAsync();
-
-            // SignalR notify all
+            var requester = await _userManager.FindByIdAsync(leave.RequestingUserId);
+            await _emailService.SendEmailAsync(requester.Email, "Leave Approved", "Your leave has been approved.");
             await _hubContext.Clients.All.SendAsync("ReceiveNotification", $"Leave #{id} approved.");
 
             TempData["Success"] = $"Leave #{id} approved!";
@@ -135,9 +178,10 @@ namespace SinetLeaveManagement.Controllers
         }
 
         // Reject
-        [Authorize(Roles = "Admin,Manager,HR")]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Reject(int id)
         {
+            var user = await _userManager.GetUserAsync(User);
             var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
             if (leave == null)
             {
@@ -145,57 +189,38 @@ namespace SinetLeaveManagement.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            await _leaveService.RejectLeaveRequestAsync(id);
+            await _leaveService.RejectLeaveRequestAsync(id, user.Id);
+            await _leaveService.AddAuditLogAsync("Reject", user.Id, id, "Rejected leave request");
 
-            var user = await _userManager.FindByIdAsync(leave.RequestingUserId);
-
-            //Send email
-            await _emailService.SendEmailAsync(user.Email, "Leave Rejected", $"Your leave request #{id} has been rejected.");
-
-            //Add notification to DB
-            _context.Notifications.Add(new Notification
-            {
-                UserId = user.Id,
-                Message = $"Your leave request #{id} has been rejected.",
-                IsRead = false,
-                CreatedAt = DateTime.UtcNow
-            });
-            await _context.SaveChangesAsync();
-
-            // ✅ SignalR notify all
+            var requester = await _userManager.FindByIdAsync(leave.RequestingUserId);
+            await _emailService.SendEmailAsync(requester.Email, "Leave Rejected", "Your leave has been rejected.");
             await _hubContext.Clients.All.SendAsync("ReceiveNotification", $"Leave #{id} rejected.");
 
             TempData["Success"] = $"Leave #{id} rejected!";
             return RedirectToAction(nameof(Index));
         }
 
-        // List user notifications
-        [Authorize]
+        // Notifications
         public async Task<IActionResult> Notifications()
         {
             var user = await _userManager.GetUserAsync(User);
-            var notifications = await _context.Notifications
-                .Where(n => n.UserId == user.Id)
-                .OrderByDescending(n => n.CreatedAt)
-                .ToListAsync();
-
-            return View(notifications);
+            var list = await _leaveService.GetUnreadNotificationsAsync(user.Id);
+            return View(list);
         }
 
-        // Mark single notification as read
-        [Authorize]
         public async Task<IActionResult> MarkAsRead(int id)
         {
-            var notification = await _context.Notifications.FindAsync(id);
             var user = await _userManager.GetUserAsync(User);
+            await _leaveService.MarkNotificationAsReadAsync(id, user.Id);
+            return RedirectToAction("Notifications");
+        }
 
-            if (notification != null && notification.UserId == user.Id)
-            {
-                notification.IsRead = true;
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction(nameof(Notifications));
+        // Audit Logs
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AuditLogs()
+        {
+            var logs = await _leaveService.GetAuditLogsAsync();
+            return View(logs);
         }
     }
 }

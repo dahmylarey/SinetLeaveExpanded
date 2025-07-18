@@ -1,42 +1,32 @@
 ﻿@model IEnumerable<SinetLeaveManagement.Models.Notification>
 @{
-    ViewData["Title"] = "My Notifications";
+    ViewData["Title"] = "Notifications";
 }
 
-<h2 class="mb-3">Notifications</h2>
+<h2>@ViewData["Title"]</h2>
 
-<table class="table table-bordered table-hover">
-    <thead class="table-dark">
+@if (!Model.Any())
+{
+    <p class="text-muted">You have no new notifications.</p>
+}
+else
+{
+    <table class="table table-bordered">
         <tr>
             <th>Message</th>
-            <th>Status</th>
-            <th>Created</th>
+            <th>Date</th>
             <th>Action</th>
         </tr>
-    </thead>
-    <tbody>
         @foreach (var n in Model)
         {
             <tr>
                 <td>@n.Message</td>
+                <td>@n.CreatedAt.ToLocalTime()</td>
                 <td>
-                    @if (n.IsRead)
-                    {
-                        <span class="badge bg-secondary">Read</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-success">New</span>
-                    }
-                </td>
-                <td>@n.CreatedAt.ToLocalTime().ToString("g")</td>
-                <td>
-                    @if (!n.IsRead)
-                    {
-                        <a asp-action="MarkAsRead" asp-route-id="@n.Id" class="btn btn-sm btn-primary">Mark as read</a>
-                    }
+                    <a asp-action="MarkAsRead" asp-route-id="@n.Id" class="btn btn-sm btn-success">Mark as Read</a>
                 </td>
             </tr>
         }
-    </tbody>
-</table>
+    </table>
+}
+<a asp-action="Index" class="btn btn-secondary mt-2">Back</a>

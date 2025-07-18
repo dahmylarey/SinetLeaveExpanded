@@ -5,6 +5,7 @@ using SinetLeaveManagement.Data;
 using SinetLeaveManagement.Hubs;
 using SinetLeaveManagement.Models;
 using SinetLeaveManagement.Services;
+using SinetLeaveManagement.Mapping;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,9 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 builder.Services.AddScoped<ILeaveService, LeaveService>();
 builder.Services.AddScoped<IEmailService, EmailService>();  
 builder.Services.AddScoped<IPdfService, PdfService>();
+
+//Add AutoMapper for mapping between models and view models
+builder.Services.AddAutoMapper(typeof(Program));
 
 //Add SignalR
 builder.Services.AddSignalR();
