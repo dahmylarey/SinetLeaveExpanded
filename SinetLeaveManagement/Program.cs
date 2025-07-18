@@ -12,19 +12,19 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-// ✅ Entity Framework Core with SQL Server
+//Entity Framework Core with SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ✅ Identity
+//Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
-    options.SignIn.RequireConfirmedEmail = true;  // recommend requiring email confirmation
+    options.SignIn.RequireConfirmedEmail = false;  // recommend requiring email confirmation
 })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
-// ✅ Register your custom services
+//Register your custom services
 builder.Services.AddScoped<ILeaveService, LeaveService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 

@@ -222,5 +222,258 @@ namespace SinetLeaveManagement.Controllers
             var logs = await _leaveService.GetAuditLogsAsync();
             return View(logs);
         }
+
+        // Export to Excel
+        [Authorize]
+        public async Task<IActionResult> ExportToPdf(int id)
+        {
+            var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
+            if (leave == null) return NotFound();
+
+            using (var stream = new MemoryStream())
+            {
+                var document = new PdfSharpCore.Pdf.PdfDocument();
+                var page = document.AddPage();
+                var gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
+                var font = new PdfSharpCore.Drawing.XFont("Verdana", 14);
+
+                gfx.DrawString($"Leave Request #{leave.Id}", font, PdfSharpCore.Drawing.XBrushes.Black, new PdfSharpCore.Drawing.XRect(0, 0, page.Width, 50), PdfSharpCore.Drawing.XStringFormats.TopCenter);
+
+                var text = $"Name: {leave.RequestingUser.FirstName} {leave.RequestingUser.LastName}\n" +
+                           $"Dates: {leave.StartDate:d} to {leave.EndDate:d}\n" +
+                           $"Status: {leave.Status}\n" +
+                           $"Reason: {leave.Reason}";
+
+                gfx.DrawString(text, new PdfSharpCore.Drawing.XFont("Verdana", 12), PdfSharpCore.Drawing.XBrushes.Black, new PdfSharpCore.Drawing.XRect(40, 60, page.Width - 80, page.Height - 60));
+
+                document.Save(stream, false);
+                stream.Position = 0;
+
+                return File(stream.ToArray(), "application/pdf", $"Leave_{leave.Id}.pdf");
+            }
+        }
+
+
+        // Export to Excel
+        [Authorize]
+        public async Task<IActionResult> ExportToExcel(int id)
+        {
+            var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
+            if (leave == null) return NotFound();
+
+            using (var package = new OfficeOpenXml.ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("LeaveRequest");
+
+                worksheet.Cells[1, 1].Value = "Id";
+                worksheet.Cells[1, 2].Value = "FirstName";
+                worksheet.Cells[1, 3].Value = "LastName";
+                worksheet.Cells[1, 4].Value = "StartDate";
+                worksheet.Cells[1, 5].Value = "EndDate";
+                worksheet.Cells[1, 6].Value = "Status";
+                worksheet.Cells[1, 7].Value = "Reason";
+
+                worksheet.Cells[2, 1].Value = leave.Id;
+                worksheet.Cells[2, 2].Value = leave.RequestingUser.FirstName;
+                worksheet.Cells[2, 3].Value = leave.RequestingUser.LastName;
+                worksheet.Cells[2, 4].Value = leave.StartDate.ToString("d");
+                worksheet.Cells[2, 5].Value = leave.EndDate.ToString("d");
+                worksheet.Cells[2, 6].Value = leave.Status;
+                worksheet.Cells[2, 7].Value = leave.Reason;
+
+                var bytes = package.GetAsByteArray();
+                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Leave_{leave.Id}.xlsx");
+            }
+        }
+
+
+        // Export all leave requests to Excel
+        [Authorize]
+        public async Task<IActionResult> ExportAllToExcel()
+        {
+            var leaves = await _leaveService.GetAllLeaveRequestsAsync();
+
+            using (var package = new OfficeOpenXml.ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("LeaveRequests");
+
+                // Header
+                worksheet.Cells[1, 1].Value = "Id";
+                worksheet.Cells[1, 2].Value = "First Name";
+                worksheet.Cells[1, 3].Value = "Last Name";
+                worksheet.Cells[1, 4].Value = "Start Date";
+                worksheet.Cells[1, 5].Value = "End Date";
+                worksheet.Cells[1, 6].Value = "Status";
+                worksheet.Cells[1, 7].Value = "Reason";
+
+                int row = 2;
+                foreach (var leave in leaves)
+                {
+                    worksheet.Cells[row, 1].Value = leave.Id;
+                    worksheet.Cells[row, 2].Value = leave.RequestingUser?.FirstName;
+                    worksheet.Cells[row, 3].Value = leave.RequestingUser?.LastName;
+                    worksheet.Cells[row, 4].Value = leave.StartDate.ToString("d");
+                    worksheet.Cells[row, 5].Value = leave.EndDate.ToString("d");
+                    worksheet.Cells[row, 6].Value = leave.Status;
+                    worksheet.Cells[row, 7].Value = leave.Reason;
+                    row++;
+                }
+
+                var bytes = package.GetAsByteArray();
+                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "AllLeaveRequests.xlsx");
+            }
+        }
+
+        // Export all leave requests to PDF
+        [Authorize]
+        public async Task<IActionResult> ExportAllToPdf()
+        {
+            var leaves = await _leaveService.GetAllLeaveRequestsAsync();
+
+            using (var stream = new MemoryStream())
+            {
+                var document = new PdfSharpCore.Pdf.PdfDocument();
+                foreach (var leave in leaves)
+                {
+                    var page = document.AddPage();
+                    var gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
+                    var font = new PdfSharpCore.Drawing.XFont("Verdana", 12);
+
+                    var text = $"Leave Request #{leave.Id}\n" +
+                               $"Name: {leave.RequestingUser?.FirstName} {leave.RequestingUser?.LastName}\n" +
+                               $"Dates: {leave.StartDate:d} to {leave.EndDate:d}\n" +
+                               $"Status: {leave.Status}\n" +
+                               $"Reason: {leave.Reason}";
+
+                    gfx.DrawString(text, font, PdfSharpCore.Drawing.XBrushes.Black, new PdfSharpCore.Drawing.XRect(40, 60, page.Width - 80, page.Height - 60));
+                }
+
+                document.Save(stream, false);
+                stream.Position = 0;
+
+                return File(stream.ToArray(), "application/pdf", "AllLeaveRequests.pdf");
+            }
+        }
+
+        [Authorize]
+        public async Task<IActionResult> ExportFilteredToExcel(string search)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            bool isAdminOrManager = await _userManager.IsInRoleAsync(user, "Admin")
+                                 || await _userManager.IsInRoleAsync(user, "Manager");
+
+            var requests = await _leaveService.GetAllLeaveRequestsAsync();
+            var query = isAdminOrManager
+                ? requests.AsQueryable()
+                : requests.Where(l => l.RequestingUserId == user.Id).AsQueryable();
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(l =>
+                    l.Status.Contains(search) ||
+                    l.RequestingUser.FirstName.Contains(search) ||
+                    l.RequestingUser.LastName.Contains(search));
+            }
+
+            var filtered = query.ToList();
+
+            using (var package = new OfficeOpenXml.ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("FilteredLeaveRequests");
+
+                // Header row
+                worksheet.Cells["A1:F1"].LoadFromArrays(new object[][]
+                {
+            new object[] { "Id", "Employee Name", "Start Date", "End Date", "Status", "Reason" }
+                });
+
+                // Style header
+                using (var range = worksheet.Cells["A1:F1"])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
+                }
+
+                // Fill data
+                int row = 2;
+                foreach (var leave in filtered)
+                {
+                    worksheet.Cells[row, 1].Value = leave.Id;
+                    worksheet.Cells[row, 2].Value = $"{leave.RequestingUser?.FirstName} {leave.RequestingUser?.LastName}";
+                    worksheet.Cells[row, 3].Value = leave.StartDate.ToString("yyyy-MM-dd");
+                    worksheet.Cells[row, 4].Value = leave.EndDate.ToString("yyyy-MM-dd");
+                    worksheet.Cells[row, 5].Value = leave.Status;
+                    worksheet.Cells[row, 6].Value = leave.Reason;
+                    row++;
+                }
+
+                // Auto-fit
+                worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+
+                var bytes = package.GetAsByteArray();
+                return File(bytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "FilteredLeaveRequests.xlsx");
+            }
+        }
+
+
+        [Authorize]
+        public async Task<IActionResult> ExportFilteredToPdf(string search)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            bool isAdminOrManager = await _userManager.IsInRoleAsync(user, "Admin")
+                                  || await _userManager.IsInRoleAsync(user, "Manager");
+
+            var requests = await _leaveService.GetAllLeaveRequestsAsync();
+            var query = isAdminOrManager
+                ? requests.AsQueryable()
+                : requests.Where(l => l.RequestingUserId == user.Id).AsQueryable();
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(l =>
+                    l.Status.Contains(search) ||
+                    l.RequestingUser.FirstName.Contains(search) ||
+                    l.RequestingUser.LastName.Contains(search));
+            }
+
+            var filtered = query.ToList();
+
+            using (var stream = new MemoryStream())
+            {
+                var document = new PdfSharpCore.Pdf.PdfDocument();
+
+                var logoUrl = $"{Request.Scheme}://{Request.Host}/images/logo.png"; // your logo
+                foreach (var leave in filtered)
+                {
+                    var page = document.AddPage();
+                    var gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
+
+                    var fontTitle = new PdfSharpCore.Drawing.XFont("Verdana", 14, PdfSharpCore.Drawing.XFontStyle.Bold);
+                    var fontBody = new PdfSharpCore.Drawing.XFont("Verdana", 10);
+
+                    // draw title
+                    gfx.DrawString($"Leave Request #{leave.Id}", fontTitle, PdfSharpCore.Drawing.XBrushes.DarkBlue,
+                        new PdfSharpCore.Drawing.XRect(40, 40, page.Width - 80, 20));
+
+                    // draw data
+                    var text = $"Name: {leave.RequestingUser?.FirstName} {leave.RequestingUser?.LastName}\n" +
+                               $"Dates: {leave.StartDate:d} to {leave.EndDate:d}\n" +
+                               $"Status: {leave.Status}\n" +
+                               $"Reason: {leave.Reason}";
+
+                    gfx.DrawString(text, fontBody, PdfSharpCore.Drawing.XBrushes.Black,
+                        new PdfSharpCore.Drawing.XRect(40, 80, page.Width - 80, page.Height - 60));
+                }
+
+                document.Save(stream, false);
+                stream.Position = 0;
+                return File(stream.ToArray(), "application/pdf", "FilteredLeaveRequests.pdf");
+            }
+        }
+
+
     }
 }
