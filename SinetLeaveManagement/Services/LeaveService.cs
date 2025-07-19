@@ -177,26 +177,28 @@ public class LeaveService : ILeaveService
 
     public async Task AddAuditLogAsync(string action, string performedByUserId, int? leaveRequestId, string details)
     {
-        if (string.IsNullOrWhiteSpace(details))
-            details = "N/A";
-
+        int? validLeaveRequestId = null;
         if (leaveRequestId.HasValue)
         {
             var exists = await _context.LeaveRequests.AnyAsync(l => l.Id == leaveRequestId.Value);
-            if (!exists) throw new Exception($"Cannot add audit log: LeaveRequest ID {leaveRequestId} not found.");
+            if (exists)
+                validLeaveRequestId = leaveRequestId;
+            else
+                details += $" (Warning: LeaveRequestId {leaveRequestId} not found)";
         }
 
         var log = new AuditLog
         {
             Action = action,
             PerformedByUserId = performedByUserId,
-            LeaveRequestId = leaveRequestId,
-            Details = details,  //use the correct property
+            LeaveRequestId = validLeaveRequestId,
+            Details = details,
             Timestamp = DateTime.UtcNow
         };
         _context.AuditLogs.Add(log);
         await _context.SaveChangesAsync();
     }
+
 
 
 
