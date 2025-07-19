@@ -113,36 +113,40 @@ public class LeaveService : ILeaveService
         return await _context.LeaveRequests.Include(l => l.RequestingUser).FirstOrDefaultAsync(l => l.Id == id);
     }
 
-    public async Task CreateLeaveRequestAsync(LeaveRequest request, string performedByUserId)
+    public async Task<LeaveRequest> CreateLeaveRequestAsync(LeaveRequest leave, string performedByUserId)
     {
-        _context.LeaveRequests.Add(request);
-        await AddAuditLogAsync("Create", performedByUserId, request.Id, "Created leave request");
-        await _context.SaveChangesAsync();
+        _context.LeaveRequests.Add(leave);
+        await _context.SaveChangesAsync(); // leave.Id now has value
+
+        await AddAuditLogAsync("Create", performedByUserId, leave.Id, "Created leave request");
+        return leave;
     }
 
-    public async Task UpdateLeaveRequestAsync(int id, LeaveRequest updatedRequest, string performedByUserId)
+    public async Task UpdateLeaveRequestAsync(int id, LeaveRequest updated, string performedByUserId)
     {
-        var leave = await _context.LeaveRequests.FindAsync(id);
-        if (leave != null)
-        {
-            leave.StartDate = updatedRequest.StartDate;
-            leave.EndDate = updatedRequest.EndDate;
-            leave.Reason = updatedRequest.Reason;
-            await AddAuditLogAsync("Update", performedByUserId, id, "Updated leave request");
-            await _context.SaveChangesAsync();
-        }
+        var existing = await _context.LeaveRequests.FindAsync(id);
+        if (existing == null) throw new Exception("Leave not found");
+
+        existing.StartDate = updated.StartDate;
+        existing.EndDate = updated.EndDate;
+        existing.Reason = updated.Reason;
+        existing.Status = updated.Status;
+
+        await _context.SaveChangesAsync();
+        await AddAuditLogAsync("Edit", performedByUserId, id, "Edited leave request");
     }
 
     public async Task DeleteLeaveRequestAsync(int id, string performedByUserId)
     {
         var leave = await _context.LeaveRequests.FindAsync(id);
-        if (leave != null)
-        {
-            _context.LeaveRequests.Remove(leave);
-            await AddAuditLogAsync("Delete", performedByUserId, id, "Deleted leave request");
-            await _context.SaveChangesAsync();
-        }
+        if (leave == null) throw new Exception("Leave not found");
+
+        _context.LeaveRequests.Remove(leave);
+        await _context.SaveChangesAsync();
+
+        await AddAuditLogAsync("Delete", performedByUserId, id, "Deleted leave request");
     }
+
 
     public async Task ApproveLeaveRequestAsync(int id, string performedByUserId)
     {
@@ -173,16 +177,28 @@ public class LeaveService : ILeaveService
 
     public async Task AddAuditLogAsync(string action, string performedByUserId, int? leaveRequestId, string details)
     {
-        _context.AuditLogs.Add(new AuditLog
+        if (string.IsNullOrWhiteSpace(details))
+            details = "N/A";
+
+        if (leaveRequestId.HasValue)
+        {
+            var exists = await _context.LeaveRequests.AnyAsync(l => l.Id == leaveRequestId.Value);
+            if (!exists) throw new Exception($"Cannot add audit log: LeaveRequest ID {leaveRequestId} not found.");
+        }
+
+        var log = new AuditLog
         {
             Action = action,
             PerformedByUserId = performedByUserId,
             LeaveRequestId = leaveRequestId,
-            Details = details,
+            Details = details,  //use the correct property
             Timestamp = DateTime.UtcNow
-        });
+        };
+        _context.AuditLogs.Add(log);
         await _context.SaveChangesAsync();
     }
+
+
 
     public async Task<List<Notification>> GetUnreadNotificationsAsync(string userId)
     {

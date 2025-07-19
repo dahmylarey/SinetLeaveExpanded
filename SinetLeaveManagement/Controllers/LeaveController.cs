@@ -69,11 +69,13 @@ namespace SinetLeaveManagement.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(LeaveRequestViewModel model)
         {
+            
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "Please check your input.";
                 return View(model);
             }
+
 
             var user = await _userManager.GetUserAsync(User);
             var leave = _mapper.Map<LeaveRequest>(model);
@@ -81,9 +83,9 @@ namespace SinetLeaveManagement.Controllers
             leave.Status = "Pending";
             leave.RequestedAt = DateTime.UtcNow;
 
-            await _leaveService.CreateLeaveRequestAsync(leave, user.Id);
+            var savedLeave = await _leaveService.CreateLeaveRequestAsync(leave, user.Id);
             await _hubContext.Clients.All.SendAsync("ReceiveNotification", "New leave request submitted.");
-            await _leaveService.AddAuditLogAsync("Create", user.Id, leave.Id, "Created leave request");
+
 
             TempData["Success"] = "Leave request submitted successfully!";
             return RedirectToAction(nameof(Index));
@@ -115,7 +117,6 @@ namespace SinetLeaveManagement.Controllers
 
             await _leaveService.UpdateLeaveRequestAsync(id, updatedLeave, user.Id);
 
-            await _leaveService.AddAuditLogAsync("Edit", user.Id, id, "Edited leave request");
 
             TempData["Success"] = "Leave request updated!";
             return RedirectToAction(nameof(Index));

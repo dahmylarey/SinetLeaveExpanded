@@ -7,21 +7,16 @@ namespace SinetLeaveManagement.Models.ViewModels
     {
         public int Id { get; set; }
 
-        public string RequestingUserId { get; set; }
-
         [Required]
-        [DataType(DataType.Date)]
         public DateTime StartDate { get; set; }
 
         [Required]
-        [DataType(DataType.Date)]
         public DateTime EndDate { get; set; }
 
-        [StringLength(500)]
+        [Required]
         public string Reason { get; set; }
 
-        public string Status { get; set; }
-
-        public DateTime RequestedAt { get; set; }
+        // etc.
     }
+
 }
