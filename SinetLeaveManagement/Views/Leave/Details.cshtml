@@ -26,7 +26,18 @@
     </div>
 </div>
 <a asp-action="Index" class="btn btn-secondary mt-2">Back</a>
-div class="mt-3">
+@if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+{
+    <a asp-action="Approve" class="btn btn-sm btn-success">Approve</a>
+    <a asp-action="Reject" class="btn btn-sm btn-danger">Reject</a>
+}
 <a asp-action="ExportToPdf" asp-route-id="@Model.Id" class="btn btn-danger">Export to PDF</a>
 <a asp-action="ExportToExcel" asp-route-id="@Model.Id" class="btn btn-success">Export to Excel</a>
 </div>
+
+
+
+
+
+    
+}

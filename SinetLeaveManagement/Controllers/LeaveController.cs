@@ -113,7 +113,8 @@ namespace SinetLeaveManagement.Controllers
             var user = await _userManager.GetUserAsync(User);
             var updatedLeave = _mapper.Map<LeaveRequest>(model);
 
-            await _leaveService.UpdateLeaveRequestAsync(id, updatedLeave);
+            await _leaveService.UpdateLeaveRequestAsync(id, updatedLeave, user.Id);
+
             await _leaveService.AddAuditLogAsync("Edit", user.Id, id, "Edited leave request");
 
             TempData["Success"] = "Leave request updated!";
@@ -147,9 +148,8 @@ namespace SinetLeaveManagement.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var user = await _userManager.GetUserAsync(User);
-            await _leaveService.DeleteLeaveRequestAsync(id);
-            await _leaveService.AddAuditLogAsync("Delete", user.Id, id, "Deleted leave request");
-
+            await _leaveService.DeleteLeaveRequestAsync(id, user.Id);
+            
             TempData["Success"] = "Leave request deleted!";
             return RedirectToAction(nameof(Index));
         }
@@ -224,67 +224,73 @@ namespace SinetLeaveManagement.Controllers
         }
 
         // Export to Excel
+        //[Authorize]
+
+        //public async Task<IActionResult> ExportToPdf(int id)
+        //{
+        //    var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
+
+        //    if (leave == null) return NotFound();
+
+        //    using (var stream = new MemoryStream())
+        //    {
+        //        var document = new PdfSharpCore.Pdf.PdfDocument();
+        //        var page = document.AddPage();
+        //        var gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
+        //        var font = new PdfSharpCore.Drawing.XFont("Verdana", 14);
+
+        //        gfx.DrawString($"Leave Request #{leave.Id}", font, PdfSharpCore.Drawing.XBrushes.Black, new PdfSharpCore.Drawing.XRect(0, 0, page.Width, 50), PdfSharpCore.Drawing.XStringFormats.TopCenter);
+
+        //        var text = $"Name: {leave.RequestingUser.FirstName} {leave.RequestingUser.LastName}\n" +
+        //                   $"Dates: {leave.StartDate:d} to {leave.EndDate:d}\n" +
+        //                   $"Status: {leave.Status}\n" +
+        //                   $"Reason: {leave.Reason}";
+
+        //        gfx.DrawString(text, new PdfSharpCore.Drawing.XFont("Verdana", 12), PdfSharpCore.Drawing.XBrushes.Black, new PdfSharpCore.Drawing.XRect(40, 60, page.Width - 80, page.Height - 60));
+
+        //        document.Save(stream, false);
+        //        stream.Position = 0;
+
+        //        return File(stream.ToArray(), "application/pdf", $"Leave_{leave.Id}.pdf");
+        //    }
+        //}
+
         [Authorize]
-        public async Task<IActionResult> ExportToPdf(int id)
+        public async Task<IActionResult> ExportExcel()
         {
-            var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
-            if (leave == null) return NotFound();
+            var user = await _userManager.GetUserAsync(User);
+            bool isAdminOrManager = await _userManager.IsInRoleAsync(user, "Admin")
+                                  || await _userManager.IsInRoleAsync(user, "Manager");
 
-            using (var stream = new MemoryStream())
-            {
-                var document = new PdfSharpCore.Pdf.PdfDocument();
-                var page = document.AddPage();
-                var gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
-                var font = new PdfSharpCore.Drawing.XFont("Verdana", 14);
+            var requests = await _leaveService.GetAllLeaveRequestsAsync();
 
-                gfx.DrawString($"Leave Request #{leave.Id}", font, PdfSharpCore.Drawing.XBrushes.Black, new PdfSharpCore.Drawing.XRect(0, 0, page.Width, 50), PdfSharpCore.Drawing.XStringFormats.TopCenter);
+            // Filter if not admin/manager
+            var filtered = isAdminOrManager
+                ? requests
+                : requests.Where(l => l.RequestingUserId == user.Id);
 
-                var text = $"Name: {leave.RequestingUser.FirstName} {leave.RequestingUser.LastName}\n" +
-                           $"Dates: {leave.StartDate:d} to {leave.EndDate:d}\n" +
-                           $"Status: {leave.Status}\n" +
-                           $"Reason: {leave.Reason}";
-
-                gfx.DrawString(text, new PdfSharpCore.Drawing.XFont("Verdana", 12), PdfSharpCore.Drawing.XBrushes.Black, new PdfSharpCore.Drawing.XRect(40, 60, page.Width - 80, page.Height - 60));
-
-                document.Save(stream, false);
-                stream.Position = 0;
-
-                return File(stream.ToArray(), "application/pdf", $"Leave_{leave.Id}.pdf");
-            }
+            var stream = await _leaveService.ExportToExcelAsync(filtered);
+            return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "LeaveRequests.xlsx");
         }
 
-
-        // Export to Excel
+        // Export PDF
         [Authorize]
-        public async Task<IActionResult> ExportToExcel(int id)
+        public async Task<IActionResult> ExportPdf()
         {
-            var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
-            if (leave == null) return NotFound();
+            var user = await _userManager.GetUserAsync(User);
+            bool isAdminOrManager = await _userManager.IsInRoleAsync(user, "Admin")
+                                  || await _userManager.IsInRoleAsync(user, "Manager");
 
-            using (var package = new OfficeOpenXml.ExcelPackage())
-            {
-                var worksheet = package.Workbook.Worksheets.Add("LeaveRequest");
+            var requests = await _leaveService.GetAllLeaveRequestsAsync();
 
-                worksheet.Cells[1, 1].Value = "Id";
-                worksheet.Cells[1, 2].Value = "FirstName";
-                worksheet.Cells[1, 3].Value = "LastName";
-                worksheet.Cells[1, 4].Value = "StartDate";
-                worksheet.Cells[1, 5].Value = "EndDate";
-                worksheet.Cells[1, 6].Value = "Status";
-                worksheet.Cells[1, 7].Value = "Reason";
+            var filtered = isAdminOrManager
+                ? requests
+                : requests.Where(l => l.RequestingUserId == user.Id);
 
-                worksheet.Cells[2, 1].Value = leave.Id;
-                worksheet.Cells[2, 2].Value = leave.RequestingUser.FirstName;
-                worksheet.Cells[2, 3].Value = leave.RequestingUser.LastName;
-                worksheet.Cells[2, 4].Value = leave.StartDate.ToString("d");
-                worksheet.Cells[2, 5].Value = leave.EndDate.ToString("d");
-                worksheet.Cells[2, 6].Value = leave.Status;
-                worksheet.Cells[2, 7].Value = leave.Reason;
-
-                var bytes = package.GetAsByteArray();
-                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Leave_{leave.Id}.xlsx");
-            }
+            var pdfBytes = await _leaveService.ExportToPdfAsync(filtered);
+            return File(pdfBytes, "application/pdf", "LeaveRequests.pdf");
         }
+
 
 
         // Export all leave requests to Excel
