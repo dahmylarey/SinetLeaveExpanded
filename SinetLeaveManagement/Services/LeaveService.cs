@@ -139,13 +139,38 @@ public class LeaveService : ILeaveService
     public async Task DeleteLeaveRequestAsync(int id, string performedByUserId)
     {
         var leave = await _context.LeaveRequests.FindAsync(id);
-        if (leave == null) throw new Exception("Leave not found");
+        if (leave == null) throw new Exception($"LeaveRequest ID {id} not found.");
+
+        // Log first while FK is valid
+        var log = new AuditLog
+        {
+            Action = "Delete",
+            PerformedByUserId = performedByUserId,
+            LeaveRequestId = leave.Id,
+            Details = $"Deleted leave request.",
+            Timestamp = DateTime.UtcNow
+        };
+        _context.AuditLogs.Add(log);
+
+        // Remove related logs to prevent FK error
+        var logs = await _context.AuditLogs.Where(a => a.LeaveRequestId == id).ToListAsync();
+        _context.AuditLogs.RemoveRange(logs);
 
         _context.LeaveRequests.Remove(leave);
         await _context.SaveChangesAsync();
-
-        await AddAuditLogAsync("Delete", performedByUserId, id, "Deleted leave request");
     }
+
+
+    //public async Task DeleteLeaveRequestAsync(int id, string performedByUserId)
+    //{
+    //    var leave = await _context.LeaveRequests.FindAsync(id);
+    //    if (leave == null) throw new Exception("Leave not found");
+
+    //    _context.LeaveRequests.Remove(leave);
+    //    await _context.SaveChangesAsync();
+
+    //    await AddAuditLogAsync("Delete", performedByUserId, id, "Deleted leave request");
+    //}
 
 
     public async Task ApproveLeaveRequestAsync(int id, string performedByUserId)

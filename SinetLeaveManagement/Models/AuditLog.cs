@@ -6,6 +6,7 @@ namespace SinetLeaveManagement.Models
     {
         public int Id { get; set; }
 
+
         public string Action { get; set; }
 
         public string PerformedByUserId { get; set; }  // FK to ApplicationUser
