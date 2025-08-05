@@ -14,14 +14,22 @@
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="container-fluid">
-                <a class="navbar-brand" href="/">Sinet Leave Management</a>
+                <!-- Brand -->
+                <a class="navbar-brand fw-bold" href="/">Sinet Leave Management</a>
+
+                <!-- Hamburger -->
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbarNav" aria-controls="navbarNav"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
+
+                <!-- Collapsible menu -->
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav me-auto">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Dashboard</a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Leave" asp-action="Index">Leave Requests</a>
                         </li>
@@ -31,6 +39,7 @@
                                 @await Component.InvokeAsync("NotificationBadge")
                             </a>
                         </li>
+
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
@@ -39,11 +48,25 @@
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Leave" asp-action="AuditLogs">Audit Logs</a>
                             </li>
+                            @* <li class="nav-item">
+                                <a class="nav-link" asp-controller="Leave" asp-action="Index">Leave Requests</a>
+                            </li> *@
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="LeaveTypes" asp-action="Index">
+                                    <i class="bi bi-tags"></i> Manage Leave Types
+                                </a>
+                            </li>
+
                         }
                     </ul>
-                    <ul class="navbar-nav">
+
+                    <!-- Right-aligned section -->
+                    <ul class="navbar-nav mb-2 mb-lg-0">
                         @if (User.Identity.IsAuthenticated)
                         {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Profile">Profile</a>
+                            </li>
                             <li class="nav-item">
                                 <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                     <button type="submit" class="nav-link btn btn-link text-white" style="cursor:pointer;">
@@ -52,7 +75,9 @@
                                 </form>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Leave" asp-action="Create">Apply</a>
+                                <a class="btn btn-light btn-sm ms-2" asp-controller="Leave" asp-action="Create">
+                                    + Apply
+                                </a>
                             </li>
                         }
                         else
@@ -79,10 +104,7 @@
         </div>
     </footer>
 
-    
-
-
-    <!-- Scripts load order -->
+    <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
@@ -90,6 +112,8 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    <!-- TempData for Toastr -->
     <input type="hidden" id="TempDataSuccess" value="@TempData["Success"]" />
     <input type="hidden" id="TempDataError" value="@TempData["Error"]" />
 </body>

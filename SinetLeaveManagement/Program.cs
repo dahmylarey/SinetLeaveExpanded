@@ -7,8 +7,6 @@ using SinetLeaveManagement.Mapping;
 using SinetLeaveManagement.Models;
 using SinetLeaveManagement.Services;
 
-
-//set QuestPDF license
 QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,7 +26,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 // Add AutoMapper
-builder.Services.AddAutoMapper(typeof(MappingProfile)); // better: use MappingProfile explicitly
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // Add custom services
 builder.Services.AddScoped<ILeaveService, LeaveService>();
@@ -37,13 +35,14 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 // Add SignalR
 builder.Services.AddSignalR();
 
-// Set QuestPDF license context
-//QuestPDF.Settings.License = LicenseType.Community;
-
-// Set EPPlus license context (works in EPPlus 5–8)
-//ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
 var app = builder.Build();
+
+// Seed Data before running
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    await SeedData.InitializeAsync(services);
+}
 
 // Configure middleware
 if (!app.Environment.IsDevelopment())

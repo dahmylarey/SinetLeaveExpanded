@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using SinetLeaveManagement.Data;
 using SinetLeaveManagement.Hubs;
 using SinetLeaveManagement.Models;
 using SinetLeaveManagement.Models.ViewModels;
@@ -23,20 +25,18 @@ namespace SinetLeaveManagement.Controllers
         private readonly IEmailService _emailService;
         private readonly IHubContext<NotificationHub> _hubContext;
         private readonly IMapper _mapper;
+        private readonly ApplicationDbContext _context;
 
-        public LeaveController(
-            ILeaveService leaveService,
-            UserManager<ApplicationUser> userManager,
-            IEmailService emailService,
-            IHubContext<NotificationHub> hubContext,
-            IMapper mapper)
+        public LeaveController(ILeaveService leaveService, UserManager<ApplicationUser> userManager, IEmailService emailService, IHubContext<NotificationHub> hubContext, IMapper mapper, ApplicationDbContext context)
         {
             _leaveService = leaveService;
             _userManager = userManager;
             _emailService = emailService;
             _hubContext = hubContext;
             _mapper = mapper;
+            _context = context;
         }
+
 
         // GET: /Leave
         public async Task<IActionResult> Index(string search, int page = 1)
@@ -62,34 +62,63 @@ namespace SinetLeaveManagement.Controllers
         }
 
         // GET: /Leave/Create
-        public IActionResult Create() => View();
+        public async Task<IActionResult> Create()
+        {
+            var leaveTypes = await _context.LeaveTypes.ToListAsync();
+
+            var viewModel = new LeaveRequestViewModel
+            {
+                LeaveTypes = leaveTypes
+            };
+
+            return View(viewModel);
+        }
 
         // POST: /Leave/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(LeaveRequestViewModel model)
         {
-            
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "Please check your input.";
+
+                // Repopulate dropdown in case of error
+                model.LeaveTypes = await _context.LeaveTypes.ToListAsync();
                 return View(model);
             }
 
-
             var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                TempData["Error"] = "User not found.";
+                model.LeaveTypes = await _context.LeaveTypes.ToListAsync();
+                return View(model);
+            }
+
             var leave = _mapper.Map<LeaveRequest>(model);
             leave.RequestingUserId = user.Id;
             leave.Status = "Pending";
             leave.RequestedAt = DateTime.UtcNow;
 
-            var savedLeave = await _leaveService.CreateLeaveRequestAsync(leave, user.Id);
-            await _hubContext.Clients.All.SendAsync("ReceiveNotification", "New leave request submitted.");
+            // Make sure the selected LeaveTypeId exists
+            var leaveType = await _context.LeaveTypes.FindAsync(model.LeaveTypeId);
+            if (leaveType == null)
+            {
+                TempData["Error"] = "Invalid leave type selected.";
+                model.LeaveTypes = await _context.LeaveTypes.ToListAsync();
+                return View(model);
+            }
 
+            var savedLeave = await _leaveService.CreateLeaveRequestAsync(leave, user.Id);
+
+            // Notify via SignalR
+            await _hubContext.Clients.All.SendAsync("ReceiveNotification", "New leave request submitted.");
 
             TempData["Success"] = "Leave request submitted successfully!";
             return RedirectToAction(nameof(Index));
         }
+
 
         // GET: /Leave/Edit/5
         public async Task<IActionResult> Edit(int id)

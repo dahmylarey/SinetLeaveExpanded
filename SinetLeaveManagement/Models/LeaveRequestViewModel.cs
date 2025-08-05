@@ -16,6 +16,11 @@ namespace SinetLeaveManagement.Models.ViewModels
         [Required]
         public string Reason { get; set; }
 
+        [Required]
+        [Display(Name = "Leave Type")]
+        public int LeaveTypeId { get; set; }
+
+        public IEnumerable<LeaveType> LeaveTypes { get; set; } // List of available leave types
         // etc.
     }
 

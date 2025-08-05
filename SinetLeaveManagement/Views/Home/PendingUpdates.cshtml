@@ -1,0 +1,32 @@
+﻿@model IEnumerable<SinetLeaveManagement.Models.LeaveRequest>
+
+<h4>Pending Leave Requests</h4>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No pending leave requests.</div>
+}
+else
+{
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Reason</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Reason</td>
+                    <td>@item.StartDate.ToShortDateString()</td>
+                    <td>@item.EndDate.ToShortDateString()</td>
+                    <td><span class="badge bg-warning text-dark">@item.Status</span></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

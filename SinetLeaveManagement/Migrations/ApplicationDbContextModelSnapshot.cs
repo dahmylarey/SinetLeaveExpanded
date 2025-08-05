@@ -3,20 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SinetLeaveManagement.Data;
 
 #nullable disable
 
-namespace SinetLeaveManagement.Data.Migrations
+namespace SinetLeaveManagement.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250721081840_UpdateAuditLogCascadeToRestrict")]
-    partial class UpdateAuditLogCascadeToRestrict
+    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -279,6 +276,9 @@ namespace SinetLeaveManagement.Data.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("LeaveTypeId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Reason")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -300,9 +300,28 @@ namespace SinetLeaveManagement.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("LeaveTypeId");
+
                     b.HasIndex("RequestingUserId");
 
                     b.ToTable("LeaveRequests");
+                });
+
+            modelBuilder.Entity("SinetLeaveManagement.Models.LeaveType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LeaveTypes");
                 });
 
             modelBuilder.Entity("SinetLeaveManagement.Models.Notification", b =>
@@ -406,11 +425,19 @@ namespace SinetLeaveManagement.Data.Migrations
 
             modelBuilder.Entity("SinetLeaveManagement.Models.LeaveRequest", b =>
                 {
+                    b.HasOne("SinetLeaveManagement.Models.LeaveType", "LeaveType")
+                        .WithMany()
+                        .HasForeignKey("LeaveTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("SinetLeaveManagement.Models.ApplicationUser", "RequestingUser")
                         .WithMany("LeaveRequests")
                         .HasForeignKey("RequestingUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("LeaveType");
 
                     b.Navigation("RequestingUser");
                 });

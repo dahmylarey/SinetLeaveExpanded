@@ -7,6 +7,14 @@
 
 <form asp-action="Create" method="post" class="mt-3">
     <div class="mb-3">
+        <label asp-for="LeaveTypeId" class="form-label"></label>
+        <select asp-for="LeaveTypeId" class="form-select" asp-items="@(new SelectList(Model.LeaveTypes, "Id", "Name"))">
+            <option value="">-- Select Leave Type --</option>
+        </select>
+        <span asp-validation-for="LeaveTypeId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
         <label asp-for="StartDate" class="form-label"></label>
         <input asp-for="StartDate" class="form-control" type="date" />
         <span asp-validation-for="StartDate" class="text-danger"></span>

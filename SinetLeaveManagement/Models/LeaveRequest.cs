@@ -28,6 +28,13 @@ namespace SinetLeaveManagement.Models
 
         public DateTime RequestedAt { get; set; }
 
+        [Required]
+        [Display(Name = "Leave Type")]
+        public int LeaveTypeId { get; set; }  // ✅ FK to LeaveType
+
+        public LeaveType LeaveType { get; set; } // ✅ Navigation property
+
+
         // Navigation property
         public ApplicationUser RequestingUser { get; set; }
 
