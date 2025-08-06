@@ -13,7 +13,7 @@
     <style>
         .sidebar {
             width: 250px;
-            position: fixed;
+            /* position: fixed; */
             height: 100%;
             background-color: #f8f9fa;
             padding: 20px;
@@ -23,6 +23,26 @@
             margin-left: 250px;
             padding: 20px;
         }
+            /* Make top navbar fixed in main content */
+            .main-content .navbar {
+                position: sticky;
+                top: 0;
+                z-index: 1030; /* higher than content */
+                background-color: #fff; /* so it doesn't overlap text */
+            }
+
+            /* Add space under navbar so content doesn't hide */
+            .main-content main {
+                padding-top: 15px; /* small gap after navbar */
+            }
+
+        .navbar.navbar-dark.bg-primary {
+            position: sticky;
+            top: 0;
+            z-index: 1040;
+        }
+
+
         .navbar {
             background-color: #fff;
             border-bottom: 1px solid #dee2e6;
@@ -99,23 +119,25 @@
                 @if (User.IsInRole("Admin"))
                 {
                     <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Register">Register User</a></li>
+                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="Admin" asp-action="Index"><i class="bi bi-person-plus me-2"></i> Employee</a></li>
                     <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="AuditLogs">Audit Logs</a></li>
                     <li class="nav-item"><a class="nav-link" asp-controller="LeaveTypes" asp-action="Index">Manage Leave Types</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="Index">Leave Requests</a></li>
+                    @* <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="Index">Leave Requests</a></li> *@
                 }
 
                 @if (User.IsInRole("Manager"))
                 {
                     <li class="nav-item mb-2"><a class="nav-link" asp-controller="Account" asp-action="Register"><i class="bi bi-person-plus me-2"></i> Register User</a></li>
+                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="Admin" asp-action="Index"><i class="bi bi-person-plus me-2"></i> Employee</a></li>
                     <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="AuditLogs"><i class="bi bi-file-earmark-text me-2"></i> Audit Logs</a></li>
                     <li class="nav-item mb-2"><a class="nav-link" asp-controller="LeaveTypes" asp-action="Index"><i class="bi bi-tags me-2"></i> Manage Leave Types</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="Index">Leave Requests</a></li>
+                    
                 }
 
                 @if (User.Identity.IsAuthenticated)
                 {
                     <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Profile">Profile</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="Create">+ Apply</a></li>
+                    @* <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="Create">+ Apply</a></li> *@
                     <li class="nav-item">
                         <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                             <button type="submit" class="nav-link btn btn-link text-white">Logout (@User.Identity.Name)</button>
@@ -140,12 +162,12 @@
             </div>
             <ul class="nav flex-column">
                 <li class="nav-item mb-2"><a class="nav-link active" asp-controller="Home" asp-action="Index"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
-                <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="Index">Leave Requests</a></li>
+                <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="Index"><i class="bi bi-bar-chart-line me-2"></i> Leave</a></li>
 
-                <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="Create"><i class="bi bi-calendar-check me-2"></i> Apply Leave</a></li>
-                <li class="nav-item mb-2"><a class="nav-link" asp-controller="Home" asp-action="LeaveBalance"><i class="bi bi-bar-chart-line me-2"></i> Leave Balance</a></li>
+                <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="Create"><i class="bi bi-calendar-check me-2"></i> Apply</a></li>
+                @* <li class="nav-item mb-2"><a class="nav-link" asp-controller="Home" asp-action="LeaveBalance"><i class="bi bi-bar-chart-line me-2"></i> Leave Balance</a></li>
                 <li class="nav-item mb-2"><a class="nav-link" asp-controller="Home" asp-action="LeaveHistory"><i class="bi bi-clock-history me-2"></i> Leave History</a></li>
-                <li class="nav-item mb-2"><a class="nav-link" asp-controller="Home" asp-action="PendingUpdates"><i class="bi bi-hourglass-split me-2"></i> Pending Requests </a></li>
+                <li class="nav-item mb-2"><a class="nav-link" asp-controller="Home" asp-action="PendingUpdates"><i class="bi bi-hourglass-split me-2"></i> Pending Requests </a></li> *@
                 <li class="nav-item mb-2">
                     <a class="nav-link" asp-controller="Leave" asp-action="Notifications">
                         <i class="bi bi-bell me-2"></i> Notifications @await Component.InvokeAsync("NotificationBadge")
@@ -154,24 +176,26 @@
                 @if (User.IsInRole("Admin"))
                 {
                     <li class="nav-item mb-2"><a class="nav-link" asp-controller="Account" asp-action="Register"><i class="bi bi-person-plus me-2"></i> Register User</a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="Index"><i class="bi bi-person me-2"></i>Employee</a></li>
                     <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="AuditLogs"><i class="bi bi-file-earmark-text me-2"></i> Audit Logs</a></li>
                     <li class="nav-item mb-2"><a class="nav-link" asp-controller="LeaveTypes" asp-action="Index"><i class="bi bi-tags me-2"></i> Manage Leave Types</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="Index">Leave Requests</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="Index">Get Users</a></li>
+                    @* <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="Index">Leave Requests</a></li> *@
+                   
                 }
 
                 @if (User.IsInRole("Manager"))
                 {
                     <li class="nav-item mb-2"><a class="nav-link" asp-controller="Account" asp-action="Register"><i class="bi bi-person-plus me-2"></i> Register User</a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="Index"><i class="bi bi-person me-2"></i> Employee</a></li>
                     <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="AuditLogs"><i class="bi bi-file-earmark-text me-2"></i> Audit Logs</a></li>
                     <li class="nav-item mb-2"><a class="nav-link" asp-controller="LeaveTypes" asp-action="Index"><i class="bi bi-tags me-2"></i> Manage Leave Types</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="Index">Leave Requests</a></li>
+                    @* <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="Index">Leave Requests</a></li> *@
                 }
 
                 @if (User.Identity.IsAuthenticated)
                 {
-                    @* <li class="nav-item mb-2"><a class="nav-link" asp-controller="Account" asp-action="Profile"><i class="bi bi-person me-2"></i> Profile</a></li> *@
-                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="Create"><i class="bi bi-plus-circle me-2"></i> + Apply</a></li>
+                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="Account" asp-action="Profile"><i class="bi bi-person me-2"></i> Profile</a></li>
+                    @* <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="Create"><i class="bi bi-plus-circle me-2"></i> + Apply</a></li> *@
                     <li class="nav-item mb-2">
                         <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                             <button type="submit" class="nav-link btn btn-link text-white"><i class="bi bi-box-arrow-right me-2"></i> Logout (@User.Identity.Name)</button>
@@ -189,7 +213,7 @@
         <div class="main-content flex-fill p-3">
             <header class="navbar">
                 <div class="search-bar">
-                    <input type="text" class="form-control" placeholder="Search" />
+                    <input type="text" name="search" value="@Context.Request.Query["search"]" class="form-control mr-2" placeholder="Search by status or user"><br />
                 </div>
                 <div class="d-flex align-items-center">
                     <a href="#" class="me-3 position-relative"><i class="bi bi-bell"></i><span class="notification-badge">3</span></a>
@@ -208,7 +232,7 @@
                 @RenderBody()
             </main>
         </div>
-    </div>
+    </div><br /><br />
 
     <footer class="border-top footer mt-auto py-3 bg-light text-muted">
         <div class="container">

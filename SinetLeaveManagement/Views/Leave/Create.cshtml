@@ -3,8 +3,12 @@
 @{
     ViewData["Title"] = "Create Leave Request";
 }
+<br />
+<br />
 
 <h2>Create Leave Request</h2>
+<br />
+
 
 <form asp-action="Create" method="post">
     <div class="form-group">
@@ -14,25 +18,25 @@
             <option value="0">-- Select Leave Type --</option>
         </select>
         <span asp-validation-for="LeaveTypeId" class="text-danger"></span>
-    </div>
+    </div><br />
 
     <div class="form-group">
         <label asp-for="StartDate" class="control-label"></label>
         <input asp-for="StartDate" class="form-control" type="date" />
         <span asp-validation-for="StartDate" class="text-danger"></span>
-    </div>
+    </div><br />
 
     <div class="form-group">
         <label asp-for="EndDate" class="control-label"></label>
         <input asp-for="EndDate" class="form-control" type="date" />
         <span asp-validation-for="EndDate" class="text-danger"></span>
-    </div>
+    </div><br />
 
     <div class="form-group">
         <label asp-for="Reason" class="control-label"></label>
         <textarea asp-for="Reason" class="form-control"></textarea>
         <span asp-validation-for="Reason" class="text-danger"></span>
-    </div>
+    </div><br />
 
     <button type="submit" class="btn btn-primary">Submit</button>
 </form>

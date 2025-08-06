@@ -181,7 +181,7 @@ namespace SinetLeaveManagement.Controllers
         }
 
         // Approve
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin,Manager,HR")]
         public async Task<IActionResult> Approve(int id)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -204,7 +204,7 @@ namespace SinetLeaveManagement.Controllers
         }
 
         // Reject
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin,Manager,HR")]
         public async Task<IActionResult> Reject(int id)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -234,6 +234,7 @@ namespace SinetLeaveManagement.Controllers
             return View(list);
         }
 
+        // Mark notification as read
         public async Task<IActionResult> MarkAsRead(int id)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -242,7 +243,7 @@ namespace SinetLeaveManagement.Controllers
         }
 
         // Audit Logs
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Manager, HR")]
         public async Task<IActionResult> AuditLogs()
         {
             var logs = await _leaveService.GetAuditLogsAsync();

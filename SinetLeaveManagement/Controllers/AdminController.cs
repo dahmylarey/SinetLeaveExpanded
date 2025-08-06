@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SinetLeaveManagement.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Manager,HR")]
     public class AdminController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;

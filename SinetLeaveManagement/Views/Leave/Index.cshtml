@@ -1,40 +1,43 @@
 ﻿@model IEnumerable<SinetLeaveManagement.Models.LeaveRequest>
-@functions {
-        string GetBadgeClass(string status)
-        {
-            return status switch
-            {
-                "Approved" => "badge-success",
-                "Rejected" => "badge-danger",
-                _ => "badge-warning"
-            };
-        }}
 
 @{
     ViewData["Title"] = "Leaves";
-}<br />
-
-
+}
+<br />
+<br />
 
 <p>
     <a asp-action="Create">Create New</a>
 </p>
+<br />
 
+<form asp-action="Index" method="get" class="form-inline mb-2">
+    <input type="text" name="search" value="@Context.Request.Query["search"]" class="form-control mr-2" placeholder="Search by status or user"><br />
+    <button type="submit" class="btn btn-primary">Search</button>
+    <a asp-action="ExportFilteredToExcel" asp-route-search="@Context.Request.Query["search"]" class="btn btn-success">Export Filtered to Excel</a>
+    <a asp-action="ExportFilteredToPdf" asp-route-search="@Context.Request.Query["search"]" class="btn btn-danger">Export Filtered to PDF</a>
+</form>
+<br />
+<br />
+<br />
 
-
-<table class="table table-striped table-bordered">
+<table class="table table-striped table-bordered leave-table">
     <thead class="thead-dark">
         <tr>
-            <th>User</th>
-            <th>Dates</th>
+            <th>Requester</th>
+            <th>Date</th>
             <th>Status</th>
-            <th>Actions</th>
+            <th style="width: 120px;">Action</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var item in Model)
         {
-            <tr>
+            <tr data-id="@item.Id"
+                data-requester="@item.RequestingUser.FirstName @item.RequestingUser.LastName"
+                data-dates="@item.StartDate.ToShortDateString() - @item.EndDate.ToShortDateString()"
+                data-status="@item.Status"
+                data-reason="@item.Reason">
                 <td>@item.RequestingUser.FirstName @item.RequestingUser.LastName</td>
                 <td>@item.StartDate.ToShortDateString() - @item.EndDate.ToShortDateString()</td>
                 <td>
@@ -56,52 +59,72 @@
                     }
                 </td>
 
-                <td>
-                    
-                    @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
-                    {
-                        <div>
-                            <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success">Approve</a>
-                            <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Reject</a>
-                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Details</a>
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Edit</a>
-
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm"
-                               onclick="return confirm('Are you sure you want to delete this request?');">Delete</a>
-                            <a asp-action="ExportExcel" asp-controller="Leave" class="btn btn-success">
-                                Excel
-                            </a>
-                            <a asp-action="ExportPdf" asp-controller="Leave" class="btn btn-info">
-                                PDF
-                            </a>
-                        </div>
-
-                       
-                        <div>
-                            
-                        </div>
-                    }
+                <td class="action-buttons text-center">
+                    <button type="button" class="btn btn-sm btn-info show-details">Take Action</button>
                 </td>
             </tr>
         }
     </tbody>
-</table><br />
-<form asp-action="Index" method="get" class="form-inline mb-2">
-    <input type="text" name="search" value="@Context.Request.Query["search"]" class="form-control mr-2" placeholder="Search by status or user"><br />
-    <button type="submit" class="btn btn-primary">Search</button>
-    <a asp-action="ExportFilteredToExcel" asp-route-search="@Context.Request.Query["search"]" class="btn btn-success">Export Filtered to Excel</a>
-    <a asp-action="ExportFilteredToPdf" asp-route-search="@Context.Request.Query["search"]" class="btn btn-danger">Export Filtered to PDF</a>
-</form>
-<br />
+</table>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="detailsModalLabel">Leave Request Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Requester:</strong> <span id="modalRequester"></span></p>
+                <p><strong>Dates:</strong> <span id="modalDates"></span></p>
+                <p><strong>Status:</strong> <span id="modalStatus"></span></p>
+                <p><strong>Reason:</strong></p>
+                <p id="modalReason" class="text-muted"></p>
+            </div>
+            <div class="modal-footer">
+                @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                {
+                    <a id="approveBtn" class="btn btn-success">Approve</a>
+                    <a id="rejectBtn" class="btn btn-danger">Reject</a>
+                }
+                <button type="button" class="btn btn-secondary" asp-action="ExportPdf" asp-controller="Leave">Pdf</button>
+                <button type="button" class="btn btn-secondary" asp-action="ExportExcel" asp-controller="Leave">Excel</button>
+                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <script>
-        $(function () {
-            var success = '@TempData["Success"]';
-            var error = '@TempData["Error"]';
-            if (success) { toastr.success(success); }
-            if (error) { toastr.error(error); }
+        $(document).on("click", ".show-details", function () {
+            var row = $(this).closest("tr");
+            var leaveId = row.data("id");
+
+            $("#modalRequester").text(row.data("requester"));
+            $("#modalDates").text(row.data("dates"));
+            $("#modalStatus").text(row.data("status"));
+            $("#modalReason").text(row.data("reason"));
+
+            // Set approve/reject button links dynamically
+            $("#approveBtn").attr("href", "/Leave/Approve/" + leaveId);
+            $("#rejectBtn").attr("href", "/Leave/Reject/" + leaveId);
+
+            $("#detailsModal").modal("show");
         });
     </script>
-}
 
+    <style>
+        /* Hide buttons by default */
+        .leave-table .action-buttons button {
+            display: none;
+        }
+
+        /* Show only when row is hovered */
+        .leave-table tr:hover .action-buttons button {
+            display: inline-block;
+        }
+    </style>
+}
