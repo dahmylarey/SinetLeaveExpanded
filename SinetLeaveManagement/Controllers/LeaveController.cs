@@ -62,16 +62,14 @@ namespace SinetLeaveManagement.Controllers
         }
 
         // GET: /Leave/Create
+        [HttpGet]
         public async Task<IActionResult> Create()
         {
-            var leaveTypes = await _context.LeaveTypes.ToListAsync();
-
-            var viewModel = new LeaveRequestViewModel
+            var model = new LeaveRequestViewModel
             {
-                LeaveTypes = leaveTypes
+                LeaveTypes = await _context.LeaveTypes.ToListAsync()
             };
-
-            return View(viewModel);
+            return View(model);
         }
 
         // POST: /Leave/Create
@@ -82,8 +80,6 @@ namespace SinetLeaveManagement.Controllers
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "Please check your input.";
-
-                // Repopulate dropdown in case of error
                 model.LeaveTypes = await _context.LeaveTypes.ToListAsync();
                 return View(model);
             }
@@ -101,7 +97,7 @@ namespace SinetLeaveManagement.Controllers
             leave.Status = "Pending";
             leave.RequestedAt = DateTime.UtcNow;
 
-            // Make sure the selected LeaveTypeId exists
+            // Ensure LeaveType exists
             var leaveType = await _context.LeaveTypes.FindAsync(model.LeaveTypeId);
             if (leaveType == null)
             {
@@ -110,7 +106,7 @@ namespace SinetLeaveManagement.Controllers
                 return View(model);
             }
 
-            var savedLeave = await _leaveService.CreateLeaveRequestAsync(leave, user.Id);
+            await _leaveService.CreateLeaveRequestAsync(leave, user.Id);
 
             // Notify via SignalR
             await _hubContext.Clients.All.SendAsync("ReceiveNotification", "New leave request submitted.");
@@ -119,7 +115,7 @@ namespace SinetLeaveManagement.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-
+        
         // GET: /Leave/Edit/5
         public async Task<IActionResult> Edit(int id)
         {

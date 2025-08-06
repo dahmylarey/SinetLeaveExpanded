@@ -26,6 +26,7 @@ namespace SinetLeaveManagement.Controllers
             return View(users);
         }
 
+        
         public async Task<IActionResult> EditRoles(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
