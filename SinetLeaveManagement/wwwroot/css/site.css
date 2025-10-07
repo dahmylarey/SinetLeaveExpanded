@@ -69,6 +69,11 @@ body {
         padding: 10px 20px;
     }
 
+.sinet-logo {
+    height: 40px; /* Adjust as needed: try 35px–45px for a neat navbar fit */
+    width: auto; /* Keeps the correct proportions */
+    object-fit: contain; /* Prevents stretching */
+}
 
 
     .btn-primary {
@@ -100,9 +105,20 @@ body {
     }
 
 
-    footer {
-        background: #f8f9fa;
+
+footer {
+    background-color: #fff;
+    color: #333;
+    font-size: 14px;
+}
+
+    footer a {
+        color: #0047b3;
+        text-decoration: none;
     }
 
+        footer a:hover {
+            text-decoration: underline;
+        }
 
 

@@ -157,7 +157,11 @@
         <!-- Desktop Sidebar -->
         <div class="sidebar d-none d-lg-block">
             <div class="d-flex align-items-center mb-4">
-                <i class="bi bi-calendar3" style="font-size: 24px; color: #0d6efd;"></i>
+                
+                <a asp-controller="Home" asp-action="Index" class="navbar-brand d-flex align-items-center">
+                    <img src="~/image/sinetLogo.png" alt="Sinet Logo" class="sinet-logo me-2">
+                </a>
+
                 <span class="fw-bold ms-2">Manage Leave</span>
             </div>
             <ul class="nav flex-column">
@@ -234,11 +238,31 @@
         </div>
     </div><br /><br />
 
-    <footer class="border-top footer mt-auto py-3 bg-light text-muted">
+    <footer class="text-center mt-5 pt-3 border-top" style="border-top: 3px solid #b30000;">
+        <div class="container py-3">
+            <p class="mb-1">
+                Century Virtual Space, 21 Prince Adelowo Adedeji St. Off Admiralty Way,<br>
+                Lekki Phase I, Lagos, Nigeria.
+            </p>
+            <p class="mb-1">
+                Tel: <a href="tel:+2348033136880">+2348033136880</a> /
+                <a href="tel:+2348176960515">+2348176960515</a>
+            </p>
+            <p class="mb-1">
+                Email: <a href="mailto:info@sinettechnologies.com">info@sinettechnologies.com</a>
+            </p>
+            <p class="mb-0">
+                Website: <a href="https://www.sinettechnologies.com" target="_blank">www.sinettechnologies.com</a>
+            </p>
+        </div>
+    </footer>
+
+
+    @* <footer class="border-top footer mt-auto py-3 bg-light text-muted">
         <div class="container">
             &copy; 2025 - SinetLeaveManagement - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
-    </footer>
+    </footer> *@
 
     <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
