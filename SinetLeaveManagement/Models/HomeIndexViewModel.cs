@@ -1,10 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace SinetLeaveManagement.Models
 {
     public class HomeIndexViewModel
     {
         public int UnreadNotificationCount { get; set; }
+
+        // 🟩 Add this line
+        public int PendingRequestsCount { get; set; }
 
         // Annual Leave
         public int AnnualLeaveUsed { get; set; }

@@ -2,17 +2,10 @@
 
 @{
     ViewData["Title"] = "Home";
-}<br />
+}
 
 <div class="container-fluid py-4">
-    <!-- Welcome Header -->
-    <div class="mb-4">
-        <h3 class="fw-semibold">Good morning, @User.Identity.Name! <span class="text-warning">👋</span></h3><br />
-        <p class="text-muted">Welcome back to your dashboard. Here's what's happening with your leave requests today.</p>
-        <small class="text-muted">Wednesday, August 6, 2025, 09:16 AM WAT <span class="text-warning">⏰ 1 pending request</span></small>
-    </div>
-
-    <!-- Pending Notifications -->
+    <!-- 🔔 Unread Notifications -->
     @if (Model.UnreadNotificationCount > 0)
     {
         <div class="alert alert-warning d-flex justify-content-between align-items-center">
@@ -26,34 +19,46 @@
         </div>
     }
 
+    <!-- 👋 Greeting Header -->
+    <div class="mb-4">
+        <h3 id="greeting" class="fw-semibold">
+            Good morning, @User.Identity.Name! <span class="text-warning">👋</span>
+        </h3>
+        <p class="text-muted mb-1">
+            Welcome back to your dashboard. Here's what's happening with your leave requests today.
+        </p>
+        <small id="datetime" class="text-muted">
+            <span class="text-warning">⏰ @Model.PendingRequestsCount pending request(s)</span>
+        </small>
+    </div>
 
-    <!-- Pending Request Alert -->
+    <!-- ⚠️ Pending Request Alert -->
     <div class="alert pending-alert d-flex justify-content-between align-items-center mb-4" role="alert">
         <div>
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> Pending Request
-            <span class="text-muted">You have 1 leave request awaiting approval</span>
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Pending Request — <span class="text-muted">You have @Model.PendingRequestsCount leave request(s) awaiting approval</span>
         </div>
-        <a class="alert-link" asp-action="Index" asp-controller="Leave">
+        <a class="alert-link" asp-controller="Leave" asp-action="Index">
             View details <i class="bi bi-arrow-right"></i>
         </a>
-
     </div><br />
 
+    <!-- 🧾 Leave Summary Cards -->
     <div class="row g-3 mb-4">
         <!-- Annual Leave -->
         <div class="col-md-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="card shadow-sm border p-2 rounded-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
                         <h6 class="text-muted mb-0">Annual Leave</h6>
-                        <span class="text-primary fw-bold">17 left</span>
+                        <span class="text-primary fw-bold">@Model.AnnualLeaveRemaining left</span>
                     </div>
                     <div class="progress mb-2" style="height:6px;">
                         <div class="progress-bar bg-primary" style="width:@Model.AnnualLeavePercentage%"></div>
                     </div>
-                    <div class="d-flex justify-content-between">
-                        <small>@Model.AnnualLeaveUsed of @Model.AnnualLeaveTotal days used</small>
-                        <small>@Model.AnnualLeaveRemaining left</small>
+                    <div class="d-flex justify-content-between small">
+                        <span>@Model.AnnualLeaveUsed of @Model.AnnualLeaveTotal days used</span>
+                        <span>@Model.AnnualLeaveRemaining left</span>
                     </div>
                 </div>
             </div>
@@ -61,18 +66,18 @@
 
         <!-- Sick Leave -->
         <div class="col-md-4">
-            <div class="card shadow-sm h-200">
-                <div class="card-body p-3 rounded-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="card shadow-sm border p-2 rounded-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
                         <h6 class="text-muted mb-0">Sick Leave</h6>
-                        <span class="text-danger fw-bold">10 left</span>
+                        <span class="text-danger fw-bold">@Model.SickLeaveRemaining left</span>
                     </div>
                     <div class="progress mb-2" style="height:6px;">
                         <div class="progress-bar bg-danger" style="width:@Model.SickLeavePercentage%"></div>
                     </div>
-                    <div class="d-flex justify-content-between">
-                        <small>@Model.SickLeaveUsed of @Model.SickLeaveTotal days used</small>
-                        <small>@Model.SickLeaveRemaining left</small>
+                    <div class="d-flex justify-content-between small">
+                        <span>@Model.SickLeaveUsed of @Model.SickLeaveTotal days used</span>
+                        <span>@Model.SickLeaveRemaining left</span>
                     </div>
                 </div>
             </div>
@@ -80,32 +85,33 @@
 
         <!-- Personal Leave -->
         <div class="col-md-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="card shadow-sm border p-2 rounded-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
                         <h6 class="text-muted mb-0">Personal Leave</h6>
-                        <span class="text-success fw-bold">4 left</span>
+                        <span class="text-success fw-bold">@Model.PersonalLeaveRemaining left</span>
                     </div>
                     <div class="progress mb-2" style="height:6px;">
                         <div class="progress-bar bg-success" style="width:@Model.PersonalLeavePercentage%"></div>
                     </div>
-                    <div class="d-flex justify-content-between">
-                        <small>@Model.PersonalLeaveUsed of @Model.PersonalLeaveTotal days used</small>
-                        <small>@Model.PersonalLeaveRemaining left</small>
+                    <div class="d-flex justify-content-between small">
+                        <span>@Model.PersonalLeaveUsed of @Model.PersonalLeaveTotal days used</span>
+                        <span>@Model.PersonalLeaveRemaining left</span>
                     </div>
                 </div>
             </div>
         </div>
-    </div><br />
+    </div><br /><br />
 
-    <!-- Quick Actions -->
+    <!-- ⚙️ Quick Actions + 📊 Recent Activity -->
     <div class="row g-3">
+        <!-- Quick Actions -->
         <div class="col-md-4">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 p-4 rounded-3">
                 <div class="card-body">
-                    <h6 class="mb-3">Quick Actions</h6>
+                    <h6 class="mb-3 fw-semibold">Quick Actions</h6>
                     <div class="d-grid gap-2">
-                        <a class="btn btn-dark w-100 mb-2" asp-controller="Leave" asp-action="Create">+ Apply for Leave</a>
+                        <a class="btn btn-dark w-100" asp-controller="Leave" asp-action="Create">+ Apply for Leave</a>
                         <a class="btn btn-outline-secondary w-100" asp-controller="Leave" asp-action="Index">View Leave</a>
                         <a class="btn btn-outline-secondary w-100" asp-controller="Home" asp-action="LeaveHistory">View History</a>
                         <a class="btn btn-outline-secondary w-100" asp-controller="Home" asp-action="LeaveBalance">Leave Balance</a>
@@ -116,10 +122,10 @@
 
         <!-- Recent Activity -->
         <div class="col-md-8">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 rounded-3">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">Recently Activity</h6>
-                    <a asp-controller="Leave" asp-action="AuditLogs" class="btn btn-outline-light btn-sm">See All Activity</a>
+                    <h6 class="mb-0">Recent Activity</h6>
+                    <a asp-controller="Leave" asp-action="AuditLogs" class="btn btn-outline-light btn-sm">See All</a>
                 </div>
                 <div class="card-body p-0">
                     @if (Model.RecentActivities != null && Model.RecentActivities.Any())
@@ -172,3 +178,43 @@
         </div>
     </div>
 </div>
+
+<!-- 🕒 Dynamic Greeting + Date/Time Script -->
+<script>
+    function updateGreetingAndTime() {
+        const now = new Date();
+        const hours = now.getHours();
+        let greeting = hours < 12 ? "Good morning" : hours < 17 ? "Good afternoon" : "Good evening";
+
+        // Safely inject Razor variables
+        const userName = '@User.Identity.Name';
+        const pendingCount = parseInt('@Model.PendingRequestsCount') || 0;
+
+        const options = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+            timeZone: 'Africa/Lagos'
+        };
+
+        document.getElementById('greeting').innerHTML =
+            `${greeting}, ${userName}! <span class="text-warning">👋</span>`;
+
+        const requestText = pendingCount === 1 ? "pending request" : "pending requests";
+
+        document.getElementById('datetime').innerHTML =
+            now.toLocaleString('en-US', options) +
+            ` WAT <span class="text-warning">⏰ ${pendingCount} ${requestText}</span>`;
+    }
+
+    updateGreetingAndTime();
+    setInterval(updateGreetingAndTime, 1000);
+</script>
+
+
+

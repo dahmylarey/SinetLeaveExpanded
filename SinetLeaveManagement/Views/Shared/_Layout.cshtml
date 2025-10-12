@@ -172,11 +172,11 @@
                 @* <li class="nav-item mb-2"><a class="nav-link" asp-controller="Home" asp-action="LeaveBalance"><i class="bi bi-bar-chart-line me-2"></i> Leave Balance</a></li>
                 <li class="nav-item mb-2"><a class="nav-link" asp-controller="Home" asp-action="LeaveHistory"><i class="bi bi-clock-history me-2"></i> Leave History</a></li>
                 <li class="nav-item mb-2"><a class="nav-link" asp-controller="Home" asp-action="PendingUpdates"><i class="bi bi-hourglass-split me-2"></i> Pending Requests </a></li> *@
-                <li class="nav-item mb-2">
+                @* <li class="nav-item mb-2">
                     <a class="nav-link" asp-controller="Leave" asp-action="Notifications">
                         <i class="bi bi-bell me-2"></i> Notifications @await Component.InvokeAsync("NotificationBadge")
                     </a>
-                </li>
+                </li> *@
                 @if (User.IsInRole("Admin"))
                 {
                     <li class="nav-item mb-2"><a class="nav-link" asp-controller="Account" asp-action="Register"><i class="bi bi-person-plus me-2"></i> Register User</a></li>
@@ -198,7 +198,7 @@
 
                 @if (User.Identity.IsAuthenticated)
                 {
-                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="Account" asp-action="Profile"><i class="bi bi-person me-2"></i> Profile</a></li>
+                    @* <li class="nav-item mb-2"><a class="nav-link" asp-controller="Account" asp-action="Profile"><i class="bi bi-person me-2"></i> Profile</a></li> *@
                     @* <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="Create"><i class="bi bi-plus-circle me-2"></i> + Apply</a></li> *@
                     <li class="nav-item mb-2">
                         <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
