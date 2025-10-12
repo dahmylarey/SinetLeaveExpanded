@@ -18,6 +18,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using X.PagedList;
 using X.PagedList.Extensions;
+using System.IO;
+using System.Collections.Generic;
 
 namespace SinetLeaveManagement.Controllers
 {
@@ -26,7 +28,7 @@ namespace SinetLeaveManagement.Controllers
     {
         private readonly ILeaveService _leaveService;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IEmailService _emailService;
+        private readonly IEmailService _emailService; // 📧 Email Service Added
         private readonly IHubContext<NotificationHub> _hubContext;
         private readonly IMapper _mapper;
         private readonly ApplicationDbContext _context;
@@ -34,21 +36,20 @@ namespace SinetLeaveManagement.Controllers
         public LeaveController(
             ILeaveService leaveService,
             UserManager<ApplicationUser> userManager,
-            IEmailService emailService,
+            IEmailService emailService, // 📧 Injected
             IHubContext<NotificationHub> hubContext,
             IMapper mapper,
             ApplicationDbContext context)
         {
             _leaveService = leaveService;
             _userManager = userManager;
-            _emailService = emailService;
+            _emailService = emailService; // 📧 Assigned
             _hubContext = hubContext;
             _mapper = mapper;
             _context = context;
         }
 
         // GET: /Leave
-        // Displays paginated list of leave requests with optional search
         public async Task<IActionResult> Index(string search, int page = 1)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -60,7 +61,6 @@ namespace SinetLeaveManagement.Controllers
                 ? requests.AsQueryable()
                 : requests.Where(l => l.RequestingUserId == user.Id).AsQueryable();
 
-            // Filter by search (status or user name)
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(l =>
@@ -111,82 +111,89 @@ namespace SinetLeaveManagement.Controllers
 
             await _leaveService.CreateLeaveRequestAsync(leave, user.Id);
 
-            // Send real-time notification
+            // 🔔 Real-time notification to all connected clients
             await _hubContext.Clients.All.SendAsync("ReceiveNotification", "New leave request submitted.");
+
+            // 📧 EMAIL NOTIFICATION SECTION
+            try
+            {
+                // 1️⃣ Notify Admins & HR about the new pending leave
+                var admins = await _userManager.GetUsersInRoleAsync("Admin");
+                var hrUsers = await _userManager.GetUsersInRoleAsync("HR");
+                var recipients = admins.Concat(hrUsers).Distinct().ToList();
+
+                foreach (var recipient in recipients)
+                {
+                    await _emailService.SendEmailAsync(
+                        recipient.Email,
+                        "New Leave Request Pending Approval",
+                        $"<p>Hello {recipient.FirstName},</p>" +
+                        $"<p>{user.FirstName} {user.LastName} has applied for leave from {leave.StartDate:dd MMM yyyy} to {leave.EndDate:dd MMM yyyy}.</p>" +
+                        $"<p>Status: <strong>Pending</strong></p>" +
+                        $"<p>Please log in to review the request.</p>" +
+                        $"<br/><p>-- Sinet Leave Management System</p>"
+                    );
+                }
+
+                // 2️⃣ Notify the applicant that their leave is now pending review
+                await _emailService.SendEmailAsync(
+                    user.Email,
+                    "Your Leave Request Has Been Submitted",
+                    $"<p>Hello {user.FirstName},</p>" +
+                    $"<p>Your leave request from {leave.StartDate:dd MMM yyyy} to {leave.EndDate:dd MMM yyyy} has been submitted successfully.</p>" +
+                    $"<p>Status: <strong>Pending Approval</strong></p>" +
+                    $"<p>You will be notified once it is reviewed.</p>" +
+                    $"<br/><p>-- Sinet Leave Management System</p>"
+                );
+
+                // ✅ (Optional) test mail — comment out in production
+                // await _emailService.SendEmailAsync("yourtestmail@example.com", "Test", "<p>Email service works!</p>");
+            }
+            catch (Exception ex)
+            {
+                // 💬 Log any mail issues safely (avoid app crash)
+                Console.WriteLine($"Error sending email: {ex.Message}");
+            }
 
             TempData["Success"] = "Leave request submitted successfully!";
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: /Leave/Edit/{id}
-        public async Task<IActionResult> Edit(int id)
-        {
-            var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
-            if (leave == null) return NotFound();
 
-            var user = await _userManager.GetUserAsync(User);
-            bool canEdit = leave.RequestingUserId == user.Id || await _userManager.IsInRoleAsync(user, "Admin");
-            if (!canEdit) return Forbid();
-
-            var model = _mapper.Map<LeaveRequestViewModel>(leave);
-            return View(model);
-        }
-
-        // POST: /Leave/Edit/{id}
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, LeaveRequestViewModel model)
-        {
-            if (!ModelState.IsValid) return View(model);
-
-            var user = await _userManager.GetUserAsync(User);
-            var updatedLeave = _mapper.Map<LeaveRequest>(model);
-
-            await _leaveService.UpdateLeaveRequestAsync(id, updatedLeave, user.Id);
-            TempData["Success"] = "Leave request updated!";
-            return RedirectToAction(nameof(Index));
-        }
-
-        // GET: /Leave/Details/{id}
-        public async Task<IActionResult> Details(int id)
-        {
-            var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
-            if (leave == null) return NotFound();
-            return View(leave);
-        }
-
-        // GET: /Leave/Delete/{id}
-        public async Task<IActionResult> Delete(int id)
-        {
-            var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
-            if (leave == null) return NotFound();
-
-            var user = await _userManager.GetUserAsync(User);
-            bool canDelete = leave.RequestingUserId == user.Id || await _userManager.IsInRoleAsync(user, "Admin");
-            if (!canDelete) return Forbid();
-
-            return View(leave);
-        }
-
-        // POST: /Leave/Delete/{id}
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var user = await _userManager.GetUserAsync(User);
-            await _leaveService.DeleteLeaveRequestAsync(id, user.Id);
-            TempData["Success"] = "Leave request deleted!";
-            return RedirectToAction(nameof(Index));
-        }
 
         // Approve leave (Admin/Manager/HR only)
         [Authorize(Roles = "Admin,Manager,HR")]
         public async Task<IActionResult> Approve(int id)
         {
             var user = await _userManager.GetUserAsync(User);
-            await _leaveService.ApproveLeaveRequestAsync(id, user.Id);
+            var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
 
+            if (leave == null) return NotFound();
+
+            await _leaveService.ApproveLeaveRequestAsync(id, user.Id);
             await _hubContext.Clients.All.SendAsync("ReceiveNotification", $"Leave #{id} approved.");
+
+            // 📧 Email notification to the leave applicant
+            try
+            {
+                var applicant = await _userManager.FindByIdAsync(leave.RequestingUserId);
+                if (applicant != null)
+                {
+                    await _emailService.SendEmailAsync(
+                        applicant.Email,
+                        "Your Leave Request Has Been Approved",
+                        $"<p>Hello {applicant.FirstName},</p>" +
+                        $"<p>Your leave request from {leave.StartDate:dd MMM yyyy} to {leave.EndDate:dd MMM yyyy} has been approved.</p>" +
+                        $"<p>Status: <strong>Approved</strong></p>" +
+                        $"<p>Enjoy your time off!</p>");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Commented out for safety: log this in production
+                 Console.WriteLine($"Error sending approval email: {ex.Message}");
+            }
+
             TempData["Success"] = $"Leave #{id} approved!";
             return RedirectToAction(nameof(Index));
         }
@@ -196,14 +203,40 @@ namespace SinetLeaveManagement.Controllers
         public async Task<IActionResult> Reject(int id)
         {
             var user = await _userManager.GetUserAsync(User);
-            await _leaveService.RejectLeaveRequestAsync(id, user.Id);
+            var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
 
+            if (leave == null) return NotFound();
+
+            await _leaveService.RejectLeaveRequestAsync(id, user.Id);
             await _hubContext.Clients.All.SendAsync("ReceiveNotification", $"Leave #{id} rejected.");
+
+            // 📧 Email notification to the leave applicant
+            try
+            {
+                var applicant = await _userManager.FindByIdAsync(leave.RequestingUserId);
+                if (applicant != null)
+                {
+                    await _emailService.SendEmailAsync(
+                        applicant.Email,
+                        "Your Leave Request Has Been Rejected",
+                        $"<p>Hello {applicant.FirstName},</p>" +
+                        $"<p>Your leave request from {leave.StartDate:dd MMM yyyy} to {leave.EndDate:dd MMM yyyy} has been rejected.</p>" +
+                        $"<p>Status: <strong>Rejected</strong></p>" +
+                        $"<p>Please contact HR for more information.</p>");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Commented out for safety: log this in production
+                // Console.WriteLine($"Error sending rejection email: {ex.Message}");
+            }
+
             TempData["Success"] = $"Leave #{id} rejected!";
             return RedirectToAction(nameof(Index));
         }
 
-        // View notifications
+
+        // Notifications
         public async Task<IActionResult> Notifications()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -211,8 +244,6 @@ namespace SinetLeaveManagement.Controllers
             return View(list);
         }
 
-
-        // Mark notification as read
         public async Task<IActionResult> MarkAsRead(int id)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -220,14 +251,12 @@ namespace SinetLeaveManagement.Controllers
             return RedirectToAction("Notifications");
         }
 
-        // Audit Logs
-        //[Authorize(Roles = "Admin, Manager, HR")]
         public async Task<IActionResult> AuditLogs()
         {
             var logs = await _leaveService.GetAuditLogsAsync();
             return View(logs);
         }
-
+               
         [Authorize]
         public async Task<IActionResult> ExportExcel()
         {
@@ -353,7 +382,7 @@ namespace SinetLeaveManagement.Controllers
 
                 worksheet.Cells["A1:F1"].LoadFromArrays(new object[][]
                 {
-            new object[] { "Id", "Employee Name", "Start Date", "End Date", "Status", "Reason" }
+    new object[] { "Id", "Employee Name", "Start Date", "End Date", "Status", "Reason" }
                 });
 
                 using (var range = worksheet.Cells["A1:F1"])
@@ -447,6 +476,7 @@ namespace SinetLeaveManagement.Controllers
         }
     }
 }
+
 
 
 //using AutoMapper;

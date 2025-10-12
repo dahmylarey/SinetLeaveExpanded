@@ -17,6 +17,7 @@ builder.Services.AddControllersWithViews();
 // Configure EF Core & Identity
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {

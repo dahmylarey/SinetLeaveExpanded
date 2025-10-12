@@ -25,7 +25,9 @@ namespace SinetLeaveManagement.Controllers
             _emailService = emailService;
         }
 
-        // Register
+        // ==========================
+        // REGISTER
+        // ==========================
         [HttpGet]
         public IActionResult Register() => View();
 
@@ -41,28 +43,49 @@ namespace SinetLeaveManagement.Controllers
                     FirstName = model.FirstName,
                     LastName = model.LastName
                 };
+
                 var result = await _userManager.CreateAsync(user, model.Password);
+
                 if (result.Succeeded)
                 {
                     await _userManager.AddToRoleAsync(user, "User");
 
+                    // Generate email confirmation link
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
                     var callbackUrl = Url.Action(nameof(ConfirmEmail), "Account",
                         new { userId = user.Id, code }, protocol: Request.Scheme);
 
+                    // 1️⃣ Send confirmation email
                     await _emailService.SendEmailAsync(model.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                        $"<p>Hello {model.FirstName},</p>" +
+                        $"<p>Thank you for registering on <strong>Sinet Leave Management</strong>.</p>" +
+                        $"<p>Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.</p>" +
+                        $"<br/><p>-- Sinet Leave Management Team</p>");
+
+                    // 2️⃣ Send welcome email (after registration)
+                    await _emailService.SendEmailAsync(model.Email, "Welcome to Sinet Leave Management",
+                        $"<p>Dear {model.FirstName},</p>" +
+                        $"<p>Welcome to <strong>Sinet Leave Management System</strong>!</p>" +
+                        $"<p>You can now log in and start managing your leave requests efficiently.</p>" +
+                        $"<br/><p>We're glad to have you on board!</p>" +
+                        $"<p>-- The Sinet HR Team</p>");
 
                     TempData["Info"] = "Registration successful! Please check your email to confirm your account.";
                     return RedirectToAction("Login");
                 }
+
+                // If creation failed, show errors
                 foreach (var error in result.Errors)
                     ModelState.AddModelError("", error.Description);
             }
+
             return View(model);
         }
 
+        // ==========================
+        // CONFIRM EMAIL
+        // ==========================
         [HttpGet]
         public async Task<IActionResult> ConfirmEmail(string userId, string code)
         {
@@ -78,7 +101,9 @@ namespace SinetLeaveManagement.Controllers
             return View(result.Succeeded ? "ConfirmEmail" : "Error");
         }
 
-        // Login
+        // ==========================
+        // LOGIN
+        // ==========================
         [HttpGet]
         public IActionResult Login() => View();
 
@@ -98,7 +123,9 @@ namespace SinetLeaveManagement.Controllers
             return View(model);
         }
 
-        // Logout
+        // ==========================
+        // LOGOUT
+        // ==========================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -114,7 +141,9 @@ namespace SinetLeaveManagement.Controllers
             return RedirectToAction("Login", "Account");
         }
 
-        // Forgot password
+        // ==========================
+        // FORGOT PASSWORD
+        // ==========================
         [HttpGet]
         public IActionResult ForgotPassword() => View();
 
@@ -134,7 +163,10 @@ namespace SinetLeaveManagement.Controllers
                     new { code, email = model.Email }, protocol: Request.Scheme);
 
                 await _emailService.SendEmailAsync(model.Email, "Reset Password",
-                    $"Reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    $"<p>Hello,</p>" +
+                    $"<p>You requested to reset your password. You can reset it by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.</p>" +
+                    $"<p>If you didn’t request this, you can safely ignore this email.</p>" +
+                    $"<br/><p>-- Sinet Leave Management System</p>");
 
                 return RedirectToAction(nameof(ForgotPasswordConfirmation));
             }
@@ -144,7 +176,9 @@ namespace SinetLeaveManagement.Controllers
         [HttpGet]
         public IActionResult ForgotPasswordConfirmation() => View();
 
-        // Reset password
+        // ==========================
+        // RESET PASSWORD
+        // ==========================
         [HttpGet]
         public IActionResult ResetPassword(string code = null, string email = null)
         {
@@ -178,7 +212,9 @@ namespace SinetLeaveManagement.Controllers
         [HttpGet]
         public IActionResult ResetPasswordConfirmation() => View();
 
-        // Delete account
+        // ==========================
+        // DELETE ACCOUNT
+        // ==========================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteAccount()
@@ -188,14 +224,17 @@ namespace SinetLeaveManagement.Controllers
             {
                 await _signInManager.SignOutAsync();
                 var result = await _userManager.DeleteAsync(user);
+
                 if (result.Succeeded)
                 {
                     TempData["Success"] = "Account deleted successfully.";
                     return RedirectToAction("Register");
                 }
+
                 foreach (var error in result.Errors)
                     ModelState.AddModelError("", error.Description);
             }
+
             return RedirectToAction("Index", "Home");
         }
     }
