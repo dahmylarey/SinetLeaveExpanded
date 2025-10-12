@@ -75,6 +75,34 @@ public class HomeController : Controller
         return View(model);
     }
 
+    public IActionResult LeaveBalance()
+    { 
+        var model = new HomeIndexViewModel
+        { AnnualLeaveUsed = 8, AnnualLeaveTotal = 25, SickLeaveUsed = 2, SickLeaveTotal = 12, PersonalLeaveUsed = 1, PersonalLeaveTotal = 5 
+        };
+
+        return View(model); 
+    
+    }
+
+    public IActionResult PendingUpdates()
+    { 
+        var pendingRequests = new List<LeaveRequest>
+        { 
+            new LeaveRequest { StartDate = DateTime.Today.AddDays(2), EndDate = DateTime.Today.AddDays(5), Reason = "Family Event", Status = "Pending" }
+        }; return View(pendingRequests);
+    }
+
+    public IActionResult LeaveHistory()
+    {
+        var leaveRequests = new List<LeaveRequest>
+        { 
+            new LeaveRequest { StartDate = DateTime.Today.AddDays(-10), EndDate = DateTime.Today.AddDays(-8), Reason = "Annual Vacation", Status = "Approved" },
+            new LeaveRequest { StartDate = DateTime.Today.AddDays(-5), EndDate = DateTime.Today.AddDays(-3), Reason = "Medical Checkup", Status = "Rejected" }
+        };
+        return View(leaveRequests);
+    }
+
     public IActionResult Privacy() => View();
 }
 

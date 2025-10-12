@@ -10,52 +10,40 @@
     <link rel="stylesheet" href="~/SinetLeaveManagement.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+
     <style>
-        .sidebar {
-            width: 250px;
-            /* position: fixed; */
-            height: 100%;
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-right: 1px solid #dee2e6;
-        }
-        .main-content {
-            margin-left: 250px;
-            padding: 20px;
-        }
-            /* Make top navbar fixed in main content */
-            .main-content .navbar {
-                position: sticky;
-                top: 0;
-                z-index: 1030; /* higher than content */
-                background-color: #fff; /* so it doesn't overlap text */
-            }
-
-            /* Add space under navbar so content doesn't hide */
-            .main-content main {
-                padding-top: 15px; /* small gap after navbar */
-            }
-
-        .navbar.navbar-dark.bg-primary {
-            position: sticky;
-            top: 0;
-            z-index: 1040;
-        }
-
-
+        /* ===============================
+                   🧭 Navbar + Animation Styling
+                   =============================== */
         .navbar {
             background-color: #fff;
             border-bottom: 1px solid #dee2e6;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 12px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1040;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            animation: fadeDown 0.5s ease-in-out;
         }
-        .nav-link.active {
-            background-color: #e9ecef;
-            border-radius: 5px;
-            color: #0d6efd;
+
+        
+
+        .nav-link {
+            transition: all 0.3s ease;
         }
+
+            .nav-link:hover {
+                color: #0d6efd !important;
+                transform: translateY(-1px);
+            }
+
+            .nav-link.active {
+                background-color: #e9ecef;
+                border-radius: 6px;
+                color: #0d6efd !important;
+                font-weight: 600;
+            }
+
         .notification-badge {
             background-color: #dc3545;
             color: white;
@@ -66,203 +54,136 @@
             right: -10px;
             top: -5px;
         }
-        .pending-alert {
-            background-color: #fff3cd;
-            border-color: #ffeeba;
-            border-radius: 5px;
+
+        main {
+            animation: fadeIn 0.6s ease;
         }
-        .card {
-            border: none;
-            border-radius: 10px;
+
+        
+
+        /* ========== Commented-out Sidebar ========== */
+        /*
+                .sidebar {
+                    width: 250px;
+                    height: 100%;
+                    background-color: #f8f9fa;
+                    padding: 20px;
+                    border-right: 1px solid #dee2e6;
+                }
+                .main-content {
+                    margin-left: 250px;
+                    padding: 20px;
+                }
+                */
+
+        footer {
+            animation: fadeIn 0.8s ease;
         }
-        .btn-dark {
-            background-color: #000;
-            border-color: #000;
-        }
-        .btn-dark:hover {
-            background-color: #333;
-            border-color: #333;
-        }
+
+        /* Wrapper for full height */
         .wrapper {
             display: flex;
+            flex-direction: column;
             min-height: 100vh;
         }
     </style>
 </head>
-<body>
-    <!-- Top Navbar with Hamburger -->
-    <nav class="navbar navbar-dark bg-primary d-lg-none">
+<body class="d-flex flex-column min-vh-100">
+    <!-- ================================
+         ✅ NEW TOP NAVBAR (No Sidebar)
+         ================================ -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/">Sinet Leave Management</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
+            <!-- Brand -->
+            <a class="navbar-brand fw-semibold text-primary d-flex align-items-center" href="@Url.Action("Index", "Home")">
+                <img src="~/image/sinetlogo.jpg" alt="Sinet Logo" style="height: 30px;" class="me-2">
+                
+            </a>
+
+            <!-- Mobile Toggle -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                    aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-        </div>
-    </nav>
 
-    <!-- Mobile Offcanvas Menu -->
-    <div class="offcanvas offcanvas-start bg-primary text-white" tabindex="-1" id="mobileMenu">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title">Menu</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
-        </div>
-        <div class="offcanvas-body">
-            @* Mobile menu items *@
-            <ul class="nav flex-column">
-                <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index">Dashboard</a></li>
-                
-                <li class="nav-item">
-                    <a class="nav-link" asp-controller="Leave" asp-action="Notifications">
-                        Notifications @await Component.InvokeAsync("NotificationBadge")
-                    </a>
-                </li>
-                @if (User.IsInRole("Admin"))
-                {
-                    <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Register">Register User</a></li>
-                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="Admin" asp-action="Index"><i class="bi bi-person-plus me-2"></i> Employee</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="AuditLogs">Audit Logs</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="LeaveTypes" asp-action="Index">Manage Leave Types</a></li>
-                    @* <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="Index">Leave Requests</a></li> *@
-                }
+            <!-- Nav Links -->
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link @(ViewBag.ActivePage == "Dashboard" ? "active" : "")" asp-controller="Home" asp-action="Index"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link @(ViewBag.ActivePage == "Leave" ? "active" : "")" asp-controller="Leave" asp-action="Index"><i class="bi bi-calendar-check me-1"></i>Leave</a></li>
+                    <li class="nav-item"><a class="nav-link @(ViewBag.ActivePage == "Apply" ? "active" : "")" asp-controller="Leave" asp-action="Create"><i class="bi bi-pencil-square me-1"></i>Apply</a></li>
 
-                @if (User.IsInRole("Manager"))
-                {
-                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="Account" asp-action="Register"><i class="bi bi-person-plus me-2"></i> Register User</a></li>
-                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="Admin" asp-action="Index"><i class="bi bi-person-plus me-2"></i> Employee</a></li>
-                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="AuditLogs"><i class="bi bi-file-earmark-text me-2"></i> Audit Logs</a></li>
-                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="LeaveTypes" asp-action="Index"><i class="bi bi-tags me-2"></i> Manage Leave Types</a></li>
-                    
-                }
+                    @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                    {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="adminMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-gear me-1"></i> Admin
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="adminMenu">
+                                <li><a class="dropdown-item" asp-controller="Account" asp-action="Register">Register User</a></li>
+                                <li><a class="dropdown-item" asp-controller="Admin" asp-action="Index">Employee</a></li>
+                                <li><a class="dropdown-item" asp-controller="Leave" asp-action="AuditLogs">Audit Logs</a></li>
+                                <li><a class="dropdown-item" asp-controller="LeaveTypes" asp-action="Index">Manage Leave Types</a></li>
+                            </ul>
+                        </li>
+                    }
+                </ul>
 
-                @if (User.Identity.IsAuthenticated)
-                {
-                    <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Profile">Profile</a></li>
-                    @* <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="Create">+ Apply</a></li> *@
-                    <li class="nav-item">
-                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                            <button type="submit" class="nav-link btn btn-link text-white">Logout (@User.Identity.Name)</button>
-                        </form>
-                    </li>
-                    
-                }
-                else
-                {
-                    <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Login">Login</a></li>
-                }
-            </ul>
-        </div>
-    </div>
+                <!-- Right Icons -->
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Search -->
+                    <form class="d-flex me-2">
+                        <input class="form-control rounded-pill" type="search" placeholder="Search by status or user" value="@Context.Request.Query["search"]">
+                    </form>
 
-    <div class="wrapper">
-        <!-- Desktop Sidebar -->
-        <div class="sidebar d-none d-lg-block">
-            <div class="d-flex align-items-center mb-4">
-                
-                <a asp-controller="Home" asp-action="Index" class="navbar-brand d-flex align-items-center">
-                    <img src="~/image/sinetLogo.png" alt="Sinet Logo" class="sinet-logo me-2">
-                </a>
+                    <!-- Notification -->
+                    <div class="position-relative me-3">
+                        <i class="bi bi-bell fs-5 text-secondary"></i>
+                        <span class="notification-badge">3</span>
+                    </div>
 
-                <span class="fw-bold ms-2">Manage Leave</span>
-            </div>
-            <ul class="nav flex-column">
-                <li class="nav-item mb-2"><a class="nav-link active" asp-controller="Home" asp-action="Index"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
-                <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="Index"><i class="bi bi-bar-chart-line me-2"></i> Leave</a></li>
-
-                <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="Create"><i class="bi bi-calendar-check me-2"></i> Apply</a></li>
-                @* <li class="nav-item mb-2"><a class="nav-link" asp-controller="Home" asp-action="LeaveBalance"><i class="bi bi-bar-chart-line me-2"></i> Leave Balance</a></li>
-                <li class="nav-item mb-2"><a class="nav-link" asp-controller="Home" asp-action="LeaveHistory"><i class="bi bi-clock-history me-2"></i> Leave History</a></li>
-                <li class="nav-item mb-2"><a class="nav-link" asp-controller="Home" asp-action="PendingUpdates"><i class="bi bi-hourglass-split me-2"></i> Pending Requests </a></li> *@
-                @* <li class="nav-item mb-2">
-                    <a class="nav-link" asp-controller="Leave" asp-action="Notifications">
-                        <i class="bi bi-bell me-2"></i> Notifications @await Component.InvokeAsync("NotificationBadge")
-                    </a>
-                </li> *@
-                @if (User.IsInRole("Admin"))
-                {
-                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="Account" asp-action="Register"><i class="bi bi-person-plus me-2"></i> Register User</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="Index"><i class="bi bi-person me-2"></i>Employee</a></li>
-                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="AuditLogs"><i class="bi bi-file-earmark-text me-2"></i> Audit Logs</a></li>
-                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="LeaveTypes" asp-action="Index"><i class="bi bi-tags me-2"></i> Manage Leave Types</a></li>
-                    @* <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="Index">Leave Requests</a></li> *@
-                   
-                }
-
-                @if (User.IsInRole("Manager"))
-                {
-                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="Account" asp-action="Register"><i class="bi bi-person-plus me-2"></i> Register User</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="Index"><i class="bi bi-person me-2"></i> Employee</a></li>
-                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="AuditLogs"><i class="bi bi-file-earmark-text me-2"></i> Audit Logs</a></li>
-                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="LeaveTypes" asp-action="Index"><i class="bi bi-tags me-2"></i> Manage Leave Types</a></li>
-                    @* <li class="nav-item"><a class="nav-link" asp-controller="Leave" asp-action="Index">Leave Requests</a></li> *@
-                }
-
-                @if (User.Identity.IsAuthenticated)
-                {
-                    @* <li class="nav-item mb-2"><a class="nav-link" asp-controller="Account" asp-action="Profile"><i class="bi bi-person me-2"></i> Profile</a></li> *@
-                    @* <li class="nav-item mb-2"><a class="nav-link" asp-controller="Leave" asp-action="Create"><i class="bi bi-plus-circle me-2"></i> + Apply</a></li> *@
-                    <li class="nav-item mb-2">
-                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                            <button type="submit" class="nav-link btn btn-link text-white"><i class="bi bi-box-arrow-right me-2"></i> Logout (@User.Identity.Name)</button>
-                        </form>
-                    </li>
-                }
-                else
-                {
-                    <li class="nav-item mb-2"><a class="nav-link" asp-controller="Account" asp-action="Login"><i class="bi bi-door-open me-2"></i> Login</a></li>
-                }
-            </ul>
-        </div>
-
-        <!-- Main Content -->
-        <div class="main-content flex-fill p-3">
-            <header class="navbar">
-                <div class="search-bar">
-                    <input type="text" name="search" value="@Context.Request.Query["search"]" class="form-control mr-2" placeholder="Search by status or user"><br />
-                </div>
-                <div class="d-flex align-items-center">
-                    <a href="#" class="me-3 position-relative"><i class="bi bi-bell"></i><span class="notification-badge">3</span></a>
+                    <!-- User Dropdown -->
                     <div class="dropdown">
-                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="dropdownUserHeader" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-person-circle" style="font-size: 24px; color: #0d6efd;"></i>
-                            <span class="ms-2">(@User.Identity.Name)</span>
+                        <a href="#" class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle fs-4 text-primary me-1"></i>
+                            <span>@User.Identity?.Name</span>
                         </a>
-                        <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUserHeader">
-                            <li><a class="dropdown-item" asp-controller="Account" asp-action="Logout">Logout</a></li>
+                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userMenu">
+                            <li><a class="dropdown-item" asp-controller="Account" asp-action="Profile">Profile</a></li>
+                            <li><hr class="dropdown-divider" /></li>
+                            <li>
+                                <form asp-controller="Account" asp-action="Logout" method="post">
+                                    <button class="dropdown-item text-danger" type="submit">Logout</button>
+                                </form>
+                            </li>
                         </ul>
                     </div>
                 </div>
-            </header>
-            <main role="main">
-                @RenderBody()
-            </main>
+            </div>
         </div>
-    </div><br /><br />
+    </nav>
 
-    <footer class="text-center mt-5 pt-3 border-top" style="border-top: 3px solid #b30000;">
-        <div class="container py-3">
-            <p class="mb-1">
-                Century Virtual Space, 21 Prince Adelowo Adedeji St. Off Admiralty Way,<br>
-                Lekki Phase I, Lagos, Nigeria.
-            </p>
-            <p class="mb-1">
-                Tel: <a href="tel:+2348033136880">+2348033136880</a> /
-                <a href="tel:+2348176960515">+2348176960515</a>
-            </p>
-            <p class="mb-1">
-                Email: <a href="mailto:info@sinettechnologies.com">info@sinettechnologies.com</a>
-            </p>
-            <p class="mb-0">
-                Website: <a href="https://www.sinettechnologies.com" target="_blank">www.sinettechnologies.com</a>
-            </p>
+    <!-- ================================
+         ✅ Main Content Area
+         ================================ -->
+    <main class="container flex-grow-1 py-4">
+        @RenderBody()
+    </main>
+
+    <!-- ================================
+         ✅ Footer
+         ================================ -->
+    <footer class="border-top py-3 text-center small bg-light">
+        <div>
+            <img src="~/image/sinetlogo.jpg" alt="Sinet Logo" style="height: 25px;">
+            <strong class="ms-2">SiNet Technologies</strong>
+        </div>
+        <div class="mt-2 text-muted">
+            <i class="bi bi-geo-alt"></i> Century Virtual Space, 21 Prince Adelowo Adedeji St., Lekki, Lagos, Nigeria<br>
+            <i class="bi bi-envelope me-1"></i> info@sinettechnologies.com |
+            <i class="bi bi-telephone me-1"></i> +2348033136880, +2348176960515
         </div>
     </footer>
-
-
-    @* <footer class="border-top footer mt-auto py-3 bg-light text-muted">
-        <div class="container">
-            &copy; 2025 - SinetLeaveManagement - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer> *@
 
     <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
