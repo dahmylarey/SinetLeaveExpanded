@@ -136,11 +136,18 @@
                         <input class="form-control rounded-pill" type="search" placeholder="Search by status or user" value="@Context.Request.Query["search"]">
                     </form>
 
-                    <!-- Notification -->
-                    <div class="position-relative me-3">
-                        <i class="bi bi-bell fs-5 text-secondary"></i>
-                        <span class="notification-badge">3</span>
+                    <!-- Notification Dropdown -->
+                    <div class="dropdown position-relative me-3">
+                        <a href="#" class="text-decoration-none text-dark" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-bell fs-5"></i>
+                            <span id="notifCount" class="notification-badge">0</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notificationDropdown" style="width: 300px; max-height: 400px; overflow-y: auto;">
+                            <!-- Notifications will be dynamically loaded here -->
+                            <li class="dropdown-item text-center text-muted">Loading...</li>
+                        </ul>
                     </div>
+
 
                     <!-- User Dropdown -->
                     <div class="dropdown">
@@ -190,11 +197,84 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            function loadNotifications() {
+                $.get("@Url.Action("UnreadNotifications", "Notification")", function (data) {
+                    var dropdown = $("#notificationDropdown").siblings(".dropdown-menu");
+                    dropdown.empty();
+
+                    if (data.length === 0) {
+                        dropdown.append('<li class="dropdown-item text-center text-muted">No new notifications</li>');
+                        $("#notifCount").text('');
+                    } else {
+                        $("#notifCount").text(data.length);
+
+                        data.forEach(function (notif) {
+                            var item = `<li class="dropdown-item">
+                                            <a href="${notif.url}" class="text-dark text-decoration-none">
+                                                ${notif.message} <br>
+                                                <small class="text-muted">${notif.createdAt}</small>
+                                            </a>
+                                        </li>`;
+                            dropdown.append(item);
+                        });
+                        dropdown.append('<li><hr class="dropdown-divider"></li>');
+                        dropdown.append('<li class="dropdown-item text-center"><a href="@Url.Action("Index", "Notification")">View All</a></li>');
+                    }
+                });
+            }
+
+            // Load notifications on page load
+            loadNotifications();
+
+            // Optional: refresh every 30 seconds
+            setInterval(loadNotifications, 30000);
+        });
+    </script>
+
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 
     <!-- Toastr TempData -->
     <input type="hidden" id="TempDataSuccess" value="@TempData["Success"]" />
     <input type="hidden" id="TempDataError" value="@TempData["Error"]" />
+
+    <script>
+        $(document).ready(function () {
+            function loadNotifications() {
+                $.get("@Url.Action("Index", "Notification")", function (data) {
+                    var dropdown = $("#notificationDropdown").siblings(".dropdown-menu");
+                    dropdown.empty();
+
+                    if (data.length === 0) {
+                        dropdown.append('<li class="dropdown-item text-center text-muted">No new notifications</li>');
+                        $("#notifCount").text('');
+                    } else {
+                        $("#notifCount").text(data.length);
+
+                        data.forEach(function (notif) {
+                            var item = `<li class="dropdown-item">
+                                            <span>${notif.message}</span>
+                                            <br>
+                                            <small class="text-muted">${new Date(notif.createdAt).toLocaleString()}</small>
+                                        </li>`;
+                            dropdown.append(item);
+                        });
+
+                        dropdown.append('<li><hr class="dropdown-divider"></li>');
+                        dropdown.append('<li class="dropdown-item text-center"><a href="@Url.Action("Index", "Notification")">View All</a></li>');
+                    }
+                });
+            }
+
+            // Load notifications on page load
+            loadNotifications();
+
+            // Optional: refresh every 30 seconds
+            setInterval(loadNotifications, 30000);
+        });
+    </script>
+
 </body>
 </html>

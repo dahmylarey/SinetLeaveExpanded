@@ -1,32 +1,46 @@
 ﻿@model IEnumerable<SinetLeaveManagement.Models.Notification>
-@{
-    ViewData["Title"] = "Notifications";
-}
 
-<h2>@ViewData["Title"]</h2>
+<h2>Notifications</h2>
 
 @if (!Model.Any())
 {
-    <p class="text-muted">You have no new notifications.</p>
+    <p>No new notifications.</p>
 }
 else
 {
-    <table class="table table-bordered">
-        <tr>
-            <th>Message</th>
-            <th>Date</th>
-            <th>Action</th>
-        </tr>
+    <ul class="list-group">
         @foreach (var n in Model)
         {
-            <tr>
-                <td>@n.Message</td>
-                <td>@n.CreatedAt.ToLocalTime()</td>
-                <td>
-                    <a asp-action="MarkAsRead" asp-route-id="@n.Id" class="btn btn-sm btn-success">Mark as Read</a>
-                </td>
-            </tr>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                @n.Message
+                <button class="btn btn-sm btn-outline-secondary mark-read-btn" data-id="@n.Id">Mark as Read</button>
+            </li>
         }
-    </table>
+    </ul>
 }
-<a asp-action="Index" class="btn btn-secondary mt-2">Back</a>
+
+@section Scripts {
+    <script src="~/lib/signalr/signalr.js"></script>
+    <script>
+        // ======================
+        // SignalR connection
+        // ======================
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/notificationsHub")
+            .build();
+
+        connection.on("ReceiveNotification", function(message) {
+            alert(message); // simple popup, can make dropdown/badge
+        });
+
+        connection.start();
+
+        // ======================
+        // Mark as read
+        // ======================
+        $(".mark-read-btn").click(function() {
+            var id = $(this).data("id");
+            $.post("/Notifications/MarkAsRead", { id: id }, () => location.reload());
+        });
+    </script>
+}
