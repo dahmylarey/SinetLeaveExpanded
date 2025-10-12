@@ -11,6 +11,12 @@ namespace SinetLeaveManagement.Models
         [Required, StringLength(100)]
         public string LastName { get; set; }
 
+        // ======================
+        // ADDITIONAL PROFILE DATA
+        // ======================
+        public string? ProfilePicturePath { get; set; } // Stores filename or relative path
+
+
         // optional: navigation property
         public ICollection<Notification> Notifications { get; set; }
 

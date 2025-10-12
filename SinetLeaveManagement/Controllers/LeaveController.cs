@@ -251,39 +251,141 @@ namespace SinetLeaveManagement.Controllers
             return RedirectToAction("Notifications");
         }
 
-        public async Task<IActionResult> AuditLogs()
+        [Authorize(Roles = "Admin,Manager,HR")]
+        public async Task<IActionResult> AuditLogs(DateTime? startDate, DateTime? endDate, string search)
         {
             var logs = await _leaveService.GetAuditLogsAsync();
+
+            // Apply filters if provided
+            if (startDate.HasValue)
+                logs = logs.Where(l => l.Timestamp >= startDate.Value).ToList();
+
+            if (endDate.HasValue)
+                logs = logs.Where(l => l.Timestamp <= endDate.Value.AddDays(1)).ToList();
+
+            if (!string.IsNullOrEmpty(search))
+                logs = logs.Where(l =>
+                    (l.Action != null && l.Action.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (l.PerformedByUser != null && l.PerformedByUser.UserName.Contains(search, StringComparison.OrdinalIgnoreCase))
+                ).ToList();
+
+            // Sort newest first
+            logs = logs.OrderByDescending(l => l.Timestamp).ToList();
+
             return View(logs);
         }
-               
-        [Authorize]
-        public async Task<IActionResult> ExportExcel()
+
+
+        [Authorize(Roles = "Admin,Manager,HR")]
+        public async Task<IActionResult> ExportToExcel(DateTime? startDate, DateTime? endDate, string search)
         {
-            var user = await _userManager.GetUserAsync(User);
-            bool isAdminOrManager = await _userManager.IsInRoleAsync(user, "Admin")
-                                  || await _userManager.IsInRoleAsync(user, "Manager");
+            var logs = await _leaveService.GetAuditLogsAsync();
 
-            var requests = await _leaveService.GetAllLeaveRequestsAsync();
-            var filtered = isAdminOrManager ? requests : requests.Where(l => l.RequestingUserId == user.Id);
+            if (startDate.HasValue)
+                logs = logs.Where(l => l.Timestamp >= startDate.Value).ToList();
 
-            var stream = await _leaveService.ExportToExcelAsync(filtered);
-            return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "LeaveRequests.xlsx");
+            if (endDate.HasValue)
+                logs = logs.Where(l => l.Timestamp <= endDate.Value.AddDays(1)).ToList();
+
+            if (!string.IsNullOrEmpty(search))
+                logs = logs.Where(l =>
+                    (l.Action != null && l.Action.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (l.PerformedByUser != null && l.PerformedByUser.UserName.Contains(search, StringComparison.OrdinalIgnoreCase))
+                ).ToList();
+
+            using (var package = new OfficeOpenXml.ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Audit Logs");
+                worksheet.Cells[1, 1].Value = "Timestamp";
+                worksheet.Cells[1, 2].Value = "Action";
+                worksheet.Cells[1, 3].Value = "Performed By";
+                worksheet.Cells[1, 4].Value = "Leave Request ID";
+                worksheet.Cells[1, 5].Value = "Details";
+
+                int row = 2;
+                foreach (var log in logs)
+                {
+                    worksheet.Cells[row, 1].Value = log.Timestamp.ToLocalTime().ToString("g");
+                    worksheet.Cells[row, 2].Value = log.Action;
+                    worksheet.Cells[row, 3].Value = log.PerformedByUser?.UserName;
+                    worksheet.Cells[row, 4].Value = log.LeaveRequestId;
+                    worksheet.Cells[row, 5].Value = log.Details;
+                    row++;
+                }
+
+                var stream = new MemoryStream();
+                package.SaveAs(stream);
+                stream.Position = 0;
+                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "AuditLogs.xlsx");
+            }
         }
 
-        [Authorize]
-        public async Task<IActionResult> ExportPdf()
+
+        [Authorize(Roles = "Admin,Manager,HR")]
+        public async Task<IActionResult> ExportToPdf(DateTime? startDate, DateTime? endDate, string search)
         {
-            var user = await _userManager.GetUserAsync(User);
-            bool isAdminOrManager = await _userManager.IsInRoleAsync(user, "Admin")
-                                  || await _userManager.IsInRoleAsync(user, "Manager");
+            var logs = await _leaveService.GetAuditLogsAsync();
 
-            var requests = await _leaveService.GetAllLeaveRequestsAsync();
-            var filtered = isAdminOrManager ? requests : requests.Where(l => l.RequestingUserId == user.Id);
+            if (startDate.HasValue)
+                logs = logs.Where(l => l.Timestamp >= startDate.Value).ToList();
 
-            var pdfBytes = await _leaveService.ExportToPdfAsync(filtered);
-            return File(pdfBytes, "application/pdf", "LeaveRequests.pdf");
+            if (endDate.HasValue)
+                logs = logs.Where(l => l.Timestamp <= endDate.Value.AddDays(1)).ToList();
+
+            if (!string.IsNullOrEmpty(search))
+                logs = logs.Where(l =>
+                    (l.Action != null && l.Action.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (l.PerformedByUser != null && l.PerformedByUser.UserName.Contains(search, StringComparison.OrdinalIgnoreCase))
+                ).ToList();
+
+            using (var pdf = new PdfSharpCore.Pdf.PdfDocument())
+            {
+                var page = pdf.AddPage();
+                var gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
+                var font = new PdfSharpCore.Drawing.XFont("Arial", 10);
+                int y = 40;
+
+                gfx.DrawString("Audit Logs Report", new PdfSharpCore.Drawing.XFont("Arial", 14, PdfSharpCore.Drawing.XFontStyle.Bold),
+                               PdfSharpCore.Drawing.XBrushes.Black, new PdfSharpCore.Drawing.XPoint(20, 20));
+
+                foreach (var log in logs)
+                {
+                    gfx.DrawString($"{log.Timestamp.ToLocalTime():g} | {log.Action} | {log.PerformedByUser?.UserName} | ID: {log.LeaveRequestId}",
+                        font, PdfSharpCore.Drawing.XBrushes.Black, new PdfSharpCore.Drawing.XPoint(20, y));
+                    y += 20;
+
+                    if (y > page.Height - 40)
+                    {
+                        page = pdf.AddPage();
+                        gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
+                        y = 40;
+                    }
+                }
+
+                using (var stream = new MemoryStream())
+                {
+                    pdf.Save(stream, false);
+                    stream.Position = 0;
+                    return File(stream, "application/pdf", "AuditLogs.pdf");
+                }
+            }
         }
+
+
+
+        //[Authorize]
+        //public async Task<IActionResult> ExportPdf()
+        //{
+        //    var user = await _userManager.GetUserAsync(User);
+        //    bool isAdminOrManager = await _userManager.IsInRoleAsync(user, "Admin")
+        //                          || await _userManager.IsInRoleAsync(user, "Manager");
+
+        //    var requests = await _leaveService.GetAllLeaveRequestsAsync();
+        //    var filtered = isAdminOrManager ? requests : requests.Where(l => l.RequestingUserId == user.Id);
+
+        //    var pdfBytes = await _leaveService.ExportToPdfAsync(filtered);
+        //    return File(pdfBytes, "application/pdf", "LeaveRequests.pdf");
+        //}
 
         [Authorize]
         public async Task<IActionResult> ExportAllToExcel()
