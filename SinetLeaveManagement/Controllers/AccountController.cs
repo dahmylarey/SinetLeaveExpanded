@@ -64,7 +64,7 @@ namespace SinetLeaveManagement.Controllers
                         $"<br/><p>-- Sinet Leave Management Team</p>");
 
                     // 2️⃣ Send welcome email (after registration)
-                    await _emailService.SendEmailAsync(model.Email, "Welcome to Sinet Leave Management",
+                    await _emailService.SendEmailAsync(model.Email, "Welcome to Sinet Leave Application.",
                         $"<p>Dear {model.FirstName},</p>" +
                         $"<p>Welcome to <strong>Sinet Leave Management System</strong>!</p>" +
                         $"<p>You can now log in and start managing your leave requests efficiently.</p>" +

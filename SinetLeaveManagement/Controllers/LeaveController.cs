@@ -131,7 +131,7 @@ namespace SinetLeaveManagement.Controllers
                         $"<p>{user.FirstName} {user.LastName} has applied for leave from {leave.StartDate:dd MMM yyyy} to {leave.EndDate:dd MMM yyyy}.</p>" +
                         $"<p>Status: <strong>Pending</strong></p>" +
                         $"<p>Please log in to review the request.</p>" +
-                        $"<br/><p>-- Sinet Leave Management System</p>"
+                        $"<br/><p>-- Sinet HR Team.</p>"
                     );
                 }
 
@@ -143,7 +143,7 @@ namespace SinetLeaveManagement.Controllers
                     $"<p>Your leave request from {leave.StartDate:dd MMM yyyy} to {leave.EndDate:dd MMM yyyy} has been submitted successfully.</p>" +
                     $"<p>Status: <strong>Pending Approval</strong></p>" +
                     $"<p>You will be notified once it is reviewed.</p>" +
-                    $"<br/><p>-- Sinet Leave Management System</p>"
+                    $"<br/><p>-- Sinet HR Team.</p>"
                 );
 
                 // ✅ (Optional) test mail — comment out in production
