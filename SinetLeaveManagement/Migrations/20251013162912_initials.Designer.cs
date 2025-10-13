@@ -12,8 +12,8 @@ using SinetLeaveManagement.Data;
 namespace SinetLeaveManagement.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251012135715_AddProfilePictureToUser")]
-    partial class AddProfilePictureToUser
+    [Migration("20251013162912_initials")]
+    partial class initials
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -170,6 +170,13 @@ namespace SinetLeaveManagement.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Department")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -177,8 +184,23 @@ namespace SinetLeaveManagement.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("EmployeeCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FullName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("HireDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("JobTitle")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -192,6 +214,10 @@ namespace SinetLeaveManagement.Migrations
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ManagerName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -269,6 +295,67 @@ namespace SinetLeaveManagement.Migrations
                     b.HasIndex("PerformedByUserId");
 
                     b.ToTable("AuditLogs");
+                });
+
+            modelBuilder.Entity("SinetLeaveManagement.Models.EmployeeProfile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("ContractEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ContractStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Department")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("EmployeeNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("EmploymentStatus")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("EmploymentType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JobTitle")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("EmployeeProfiles");
                 });
 
             modelBuilder.Entity("SinetLeaveManagement.Models.LeaveRequest", b =>
@@ -429,6 +516,17 @@ namespace SinetLeaveManagement.Migrations
                     b.Navigation("PerformedByUser");
                 });
 
+            modelBuilder.Entity("SinetLeaveManagement.Models.EmployeeProfile", b =>
+                {
+                    b.HasOne("SinetLeaveManagement.Models.ApplicationUser", "User")
+                        .WithOne("EmployeeProfile")
+                        .HasForeignKey("SinetLeaveManagement.Models.EmployeeProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SinetLeaveManagement.Models.LeaveRequest", b =>
                 {
                     b.HasOne("SinetLeaveManagement.Models.LeaveType", "LeaveType")
@@ -461,6 +559,8 @@ namespace SinetLeaveManagement.Migrations
 
             modelBuilder.Entity("SinetLeaveManagement.Models.ApplicationUser", b =>
                 {
+                    b.Navigation("EmployeeProfile");
+
                     b.Navigation("LeaveRequests");
 
                     b.Navigation("Notifications");

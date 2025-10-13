@@ -112,9 +112,27 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     @if (User.Identity.IsAuthenticated)
                     {
-                        <li class="nav-item"><a class="nav-link @(ViewBag.ActivePage == "Dashboard" ? "active" : "")" asp-controller="Home" asp-action="Index"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
-                        <li class="nav-item"><a class="nav-link @(ViewBag.ActivePage == "Leave" ? "active" : "")" asp-controller="Leave" asp-action="Index"><i class="bi bi-calendar-check me-1"></i>Leave</a></li>
-                        <li class="nav-item"><a class="nav-link @(ViewBag.ActivePage == "Apply" ? "active" : "")" asp-controller="Leave" asp-action="Create"><i class="bi bi-pencil-square me-1"></i>Apply</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewBag.ActivePage == "Dashboard" ? "active" : "")" asp-controller="Home" asp-action="Index">
+                                <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewBag.ActivePage == "Leave" ? "active" : "")" asp-controller="Leave" asp-action="Index">
+                                <i class="bi bi-calendar-check me-1"></i> Leave
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewBag.ActivePage == "Apply" ? "active" : "")" asp-controller="Leave" asp-action="Create">
+                                <i class="bi bi-pencil-square me-1"></i> Apply
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" asp-controller="Employee" asp-action="Index">
+                                <i class="bi bi-list-check me-1"></i> Manage Employees
+                            </a>
+
+                        </li>
                         
                     }
 
@@ -125,14 +143,27 @@
                                 <i class="bi bi-gear me-1"></i> Admin
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="adminMenu">
-                                @* <li><a class="dropdown-item" asp-controller="Account" asp-action="Register">Register User</a></li> *@
-                                <li><a class="dropdown-item" asp-controller="Admin" asp-action="Index">Employee</a></li>
-                                <li><a class="dropdown-item" asp-controller="Leave" asp-action="AuditLogs">Audit Logs</a></li>
-                                <li><a class="dropdown-item" asp-controller="LeaveTypes" asp-action="Index">Manage Leave Types</a></li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Admin" asp-action="Index">
+                                        <i class="bi bi-people-fill me-1"></i> Employee
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Leave" asp-action="AuditLogs">
+                                        <i class="bi bi-file-earmark-text me-1"></i> Audit Logs
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="LeaveTypes" asp-action="Index">
+                                        <i class="bi bi-list-check me-1"></i> Manage Leave Types
+                                    </a>
+                                </li>
+                               
                             </ul>
                         </li>
                     }
                 </ul>
+
 
                 <!-- Right Icons -->
                 <div class="d-flex align-items-center gap-3">

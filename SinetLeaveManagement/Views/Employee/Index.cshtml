@@ -1,0 +1,70 @@
+﻿@model IEnumerable<SinetLeaveManagement.Models.EmployeeProfile>
+
+@{
+    ViewData["Title"] = "Employee Profiles";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-3 text-primary">Employee Profiles</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <a asp-action="Create" class="btn btn-primary mb-3">
+        <i class="bi bi-person-plus"></i> Create New Profile
+    </a>
+
+    <table class="table table-bordered table-striped align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Address</th>
+                <th>City</th>
+                <th>Country</th>
+                <th>Employment Status</th>
+                <th>Contract Period</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var emp in Model)
+                {
+                    <tr>
+                        <td>@emp.User?.FirstName @emp.User?.LastName</td>
+                        <td>@emp.User?.Email</td>
+                        <td>@emp.Address</td>
+                        <td>@emp.City</td>
+                        <td>@emp.Country</td>
+                        <td>@emp.EmploymentStatus</td>
+                        <td>
+                            @(emp.ContractStartDate?.ToShortDateString() ?? "-") -
+                            @(emp.ContractEndDate?.ToShortDateString() ?? "-")
+                        </td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@emp.Id" class="btn btn-sm btn-info me-1 text-white">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@emp.Id" class="btn btn-sm btn-warning me-1">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@emp.Id" class="btn btn-sm btn-danger">
+                                <i class="bi bi-trash"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="8" class="text-center text-muted">No employee profiles found.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

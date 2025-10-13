@@ -1,0 +1,81 @@
+﻿@model SinetLeaveManagement.Models.EmployeeProfile
+
+@{
+    ViewData["Title"] = "Employee Profile Details";
+}
+
+<div class="container mt-4">
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="bi bi-person-badge"></i> Employee Profile</h4>
+            <div>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-light btn-sm me-2">
+                    <i class="bi bi-pencil-square"></i> Edit
+                </a>
+                <a asp-action="Index" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-arrow-left"></i> Back
+                </a>
+            </div>
+        </div>
+
+        <div class="card-body p-4">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h5 class="text-secondary">Basic Information</h5>
+                    <hr />
+                    <dl class="row">
+                        <dt class="col-sm-4">Name</dt>
+                        <dd class="col-sm-8">@Model.User?.FirstName @Model.User?.LastName</dd>
+
+                        <dt class="col-sm-4">Email</dt>
+                        <dd class="col-sm-8">@Model.User?.Email</dd>
+
+                        <dt class="col-sm-4">Department</dt>
+                        <dd class="col-sm-8">@Model.User?.Department ?? "N/A"</dd>
+
+                        <dt class="col-sm-4">Employment Status</dt>
+                        <dd class="col-sm-8">@Model.EmploymentStatus</dd>
+
+                        <dt class="col-sm-4">Employee Code</dt>
+                        <dd class="col-sm-8">@Model.User?.EmployeeCode ?? "N/A"</dd>
+                    </dl>
+                </div>
+
+                <div class="col-md-6">
+                    <h5 class="text-secondary">Contact Information</h5>
+                    <hr />
+                    <dl class="row">
+                        <dt class="col-sm-4">Address</dt>
+                        <dd class="col-sm-8">@Model.Address</dd>
+
+                        <dt class="col-sm-4">City</dt>
+                        <dd class="col-sm-8">@Model.City</dd>
+
+                        <dt class="col-sm-4">Country</dt>
+                        <dd class="col-sm-8">@Model.Country</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="text-secondary">Contract Details</h5>
+                    <hr />
+                    <dl class="row">
+                        <dt class="col-sm-5">Contract Start Date</dt>
+                        <dd class="col-sm-7">@Model.ContractStartDate?.ToString("dd MMM yyyy") ?? "N/A"</dd>
+
+                        <dt class="col-sm-5">Contract End Date</dt>
+                        <dd class="col-sm-7">@Model.ContractEndDate?.ToString("dd MMM yyyy") ?? "N/A"</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer bg-light text-end">
+            <button onclick="window.print()" class="btn btn-outline-secondary">
+                <i class="bi bi-printer"></i> Print Profile
+            </button>
+        </div>
+    </div>
+</div>

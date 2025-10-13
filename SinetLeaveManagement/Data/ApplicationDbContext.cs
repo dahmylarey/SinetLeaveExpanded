@@ -15,6 +15,8 @@ namespace SinetLeaveManagement.Data
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<LeaveType> LeaveTypes { get; set; }
+        public DbSet<EmployeeProfile> EmployeeProfiles { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

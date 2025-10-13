@@ -1,0 +1,64 @@
+﻿@model SinetLeaveManagement.Models.EmployeeProfile
+
+@{
+    ViewData["Title"] = "Create Employee Profile";
+    var users = ViewBag.Users as List<SinetLeaveManagement.Models.ApplicationUser>;
+}
+
+<div class="container mt-4">
+    <h2 class="mb-3 text-primary">Create Employee Profile</h2>
+
+    <form asp-action="Create" method="post" class="card p-4 shadow-sm">
+        <div class="mb-3">
+            <label class="form-label">Select User</label>
+            <select asp-for="UserId" class="form-select" required>
+                <option value="">-- Select User --</option>
+                @foreach (var user in users)
+                {
+                    <option value="@user.Id">@user.FirstName @user.LastName (@user.Email)</option>
+                }
+            </select>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Address" class="form-label"></label>
+                <input asp-for="Address" class="form-control" />
+            </div>
+            <div class="col-md-3 mb-3">
+                <label asp-for="City" class="form-label"></label>
+                <input asp-for="City" class="form-control" />
+            </div>
+            <div class="col-md-3 mb-3">
+                <label asp-for="Country" class="form-label"></label>
+                <input asp-for="Country" class="form-control" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="ContractStartDate" class="form-label"></label>
+                <input asp-for="ContractStartDate" type="date" class="form-control" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="ContractEndDate" class="form-label"></label>
+                <input asp-for="ContractEndDate" type="date" class="form-control" />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="EmploymentStatus" class="form-label"></label>
+            <select asp-for="EmploymentStatus" class="form-select">
+                <option value="">-- Select Status --</option>
+                <option>Active</option>
+                <option>Probation</option>
+                <option>Terminated</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-save"></i> Save
+        </button>
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    </form>
+</div>

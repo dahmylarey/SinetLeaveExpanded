@@ -11,6 +11,32 @@ namespace SinetLeaveManagement.Models
         [Required, StringLength(100)]
         public string LastName { get; set; }
 
+        
+        [StringLength(100)]
+        public string? FullName { get; set; }
+
+        [StringLength(50)]
+        public string? EmployeeCode { get; set; }
+
+        [StringLength(100)]
+        public string? Department { get; set; }
+
+        [StringLength(100)]
+        public string?  JobTitle { get; set; }
+
+        [DataType(DataType.Date)]
+        public DateTime? HireDate { get; set; }
+
+        [DataType(DataType.Date)]
+        public DateTime? DateOfBirth { get; set; }
+
+        [StringLength(100)]
+        public string? ManagerName { get; set; }
+
+        // Navigation property (optional)
+        public EmployeeProfile? EmployeeProfile { get; set; }
+
+
         // ======================
         // ADDITIONAL PROFILE DATA
         // ======================

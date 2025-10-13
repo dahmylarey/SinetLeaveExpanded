@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SinetLeaveManagement.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class Inits : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -32,6 +32,14 @@ namespace SinetLeaveManagement.Migrations
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    FullName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    EmployeeCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Department = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    JobTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    HireDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ManagerName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ProfilePicturePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -172,6 +180,36 @@ namespace SinetLeaveManagement.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "EmployeeProfiles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    EmployeeNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    Department = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    JobTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Address = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    City = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Country = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    ContractStartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ContractEndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EmploymentStatus = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    EmploymentType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EmployeeProfiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_EmployeeProfiles_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Notifications",
                 columns: table => new
                 {
@@ -303,6 +341,12 @@ namespace SinetLeaveManagement.Migrations
                 column: "PerformedByUserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_EmployeeProfiles_UserId",
+                table: "EmployeeProfiles",
+                column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LeaveRequests_LeaveTypeId",
                 table: "LeaveRequests",
                 column: "LeaveTypeId");
@@ -338,6 +382,9 @@ namespace SinetLeaveManagement.Migrations
 
             migrationBuilder.DropTable(
                 name: "AuditLogs");
+
+            migrationBuilder.DropTable(
+                name: "EmployeeProfiles");
 
             migrationBuilder.DropTable(
                 name: "Notifications");
