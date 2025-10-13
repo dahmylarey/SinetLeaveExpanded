@@ -96,7 +96,7 @@
         <div class="container-fluid">
             <!-- Brand -->
             <a class="navbar-brand fw-semibold text-primary d-flex align-items-center" href="@Url.Action("Index", "Home")">
-                <img src="~/image/sinetlogo.jpg" alt="Sinet Logo" style="height: 30px;" class="me-2">
+                <img src="~/profilepics/images/sinetlogo.png" alt="Sinet Logo" style="height: 30px;" class="me-2">
                 
             </a>
 
@@ -120,7 +120,7 @@
                                 <i class="bi bi-gear me-1"></i> Admin
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="adminMenu">
-                                <li><a class="dropdown-item" asp-controller="Account" asp-action="Register">Register User</a></li>
+                                @* <li><a class="dropdown-item" asp-controller="Account" asp-action="Register">Register User</a></li> *@
                                 <li><a class="dropdown-item" asp-controller="Admin" asp-action="Index">Employee</a></li>
                                 <li><a class="dropdown-item" asp-controller="Leave" asp-action="AuditLogs">Audit Logs</a></li>
                                 <li><a class="dropdown-item" asp-controller="LeaveTypes" asp-action="Index">Manage Leave Types</a></li>
@@ -182,7 +182,7 @@
          ================================ -->
     <footer class="border-top py-3 text-center small bg-light">
         <div>
-            <img src="~/image/sinetlogo.jpg" alt="Sinet Logo" style="height: 25px;">
+            <img src="~/profilepics/images/sinetlogo.png" alt="Sinet Logo" style="height: 25px;" />
             <strong class="ms-2">SiNet Technologies</strong>
         </div>
         <div class="mt-2 text-muted">
