@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="~/SinetLeaveManagement.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+    
 
     <style>
         /* ===============================
@@ -109,9 +110,13 @@
             <!-- Nav Links -->
             <div class="collapse navbar-collapse" id="mainNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link @(ViewBag.ActivePage == "Dashboard" ? "active" : "")" asp-controller="Home" asp-action="Index"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link @(ViewBag.ActivePage == "Leave" ? "active" : "")" asp-controller="Leave" asp-action="Index"><i class="bi bi-calendar-check me-1"></i>Leave</a></li>
-                    <li class="nav-item"><a class="nav-link @(ViewBag.ActivePage == "Apply" ? "active" : "")" asp-controller="Leave" asp-action="Create"><i class="bi bi-pencil-square me-1"></i>Apply</a></li>
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <li class="nav-item"><a class="nav-link @(ViewBag.ActivePage == "Dashboard" ? "active" : "")" asp-controller="Home" asp-action="Index"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link @(ViewBag.ActivePage == "Leave" ? "active" : "")" asp-controller="Leave" asp-action="Index"><i class="bi bi-calendar-check me-1"></i>Leave</a></li>
+                        <li class="nav-item"><a class="nav-link @(ViewBag.ActivePage == "Apply" ? "active" : "")" asp-controller="Leave" asp-action="Create"><i class="bi bi-pencil-square me-1"></i>Apply</a></li>
+                        
+                    }
 
                     @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
                     {
@@ -132,9 +137,17 @@
                 <!-- Right Icons -->
                 <div class="d-flex align-items-center gap-3">
                     <!-- Search -->
-                    <form class="d-flex me-2">
-                        <input class="form-control rounded-pill" type="search" placeholder="Search by status or user" value="@Context.Request.Query["search"]">
+                    <form class="d-flex me-2" asp-controller="Leave" asp-action="Index" method="get">
+                        <input class="form-control rounded-pill"
+                               type="search"
+                               name="search"
+                               placeholder="Search by status or user"
+                               value="@Context.Request.Query["search"]" />
+                        <button class="btn btn-outline-primary ms-2 rounded-pill" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
                     </form>
+
 
                     <!-- Notification Dropdown -->
                     <div class="dropdown position-relative me-3">
@@ -150,21 +163,71 @@
 
 
                     <!-- User Dropdown -->
+                    @using Microsoft.AspNetCore.Identity
+                    @inject UserManager<SinetLeaveManagement.Models.ApplicationUser> UserManager
+
+                    @{
+                        var currentUser = await UserManager.GetUserAsync(User);
+                        string profilePicturePath;
+
+                        if (currentUser != null && !string.IsNullOrEmpty(currentUser.ProfilePicturePath))
+                        {
+                            profilePicturePath = Url.Content($"~/{currentUser.ProfilePicturePath}");
+                        }
+                        else
+                        {
+                            profilePicturePath = Url.Content("~/images/default-avatar.png");
+                        }
+                    }
+
                     <div class="dropdown">
-                        <a href="#" class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-person-circle fs-4 text-primary me-1"></i>
-                            <span>@User.Identity?.Name</span>
+                        <a href="#" class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle"
+                           id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+
+                            <!--Profile picture replaces icon -->
+                            <img src="@($"{profilePicturePath}?v={DateTime.Now.Ticks}")"
+                                 alt="Profile Picture"
+                                 class="rounded-circle border border-2 border-primary me-2"
+                                 width="35" height="35" />
+
+                            <span class="fw-semibold">@User.Identity?.Name</span>
                         </a>
+
                         <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userMenu">
-                            <li><a class="dropdown-item" asp-controller="Admin" asp-action="Profile">Profile</a></li>
-                            <li><hr class="dropdown-divider" /></li>
-                            <li>
-                                <form asp-controller="Account" asp-action="Logout" method="post">
-                                    <button class="dropdown-item text-danger" type="submit">Logout</button>
-                                </form>
-                            </li>
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Home" asp-action="Profile">
+                                        <i class="bi bi-person"></i> My Profile
+                                    </a>
+                                </li>
+
+                                <li><hr class="dropdown-divider" /></li>
+
+                                <li>
+                                    <form asp-controller="Account" asp-action="Logout" method="post">
+                                        <button class="dropdown-item text-danger" type="submit">
+                                            <i class="bi bi-box-arrow-right"></i> Logout
+                                        </button>
+                                    </form>
+                                </li>
+                            }
+                            else
+                            {
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Account" asp-action="Login">
+                                        <i class="bi bi-box-arrow-in-right"></i> Login
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Account" asp-action="Register">
+                                        <i class="bi bi-person-plus"></i> Register
+                                    </a>
+                                </li>
+                            }
                         </ul>
                     </div>
+
                 </div>
             </div>
         </div>

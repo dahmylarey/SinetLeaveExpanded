@@ -252,74 +252,8 @@ namespace SinetLeaveManagement.Controllers
         // ======================
         // PROFILE (OPTIONAL)
         // ======================
-        [Authorize]
-        public async Task<IActionResult> Profile()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            var model = new EditProfileViewModel
-            {
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email,
-                ExistingPicturePath = user.ProfilePicturePath
-            };
-            return View(model);
-        }
 
-        
-        [HttpPost]
-        public async Task<IActionResult> Profile(EditProfileViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
 
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return NotFound();
-
-            // Update basic info
-            user.FirstName = model.FirstName;
-            user.LastName = model.LastName;
-            user.Email = model.Email;
-            user.UserName = model.Email;
-
-            // ======================
-            // HANDLE PROFILE PICTURE UPLOAD
-            // ======================
-            if (model.ProfilePicture != null && model.ProfilePicture.Length > 0)
-            {
-                // Ensure the directory exists
-                var uploadDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/profilepics");
-                if (!Directory.Exists(uploadDir))
-                    Directory.CreateDirectory(uploadDir);
-
-                // Generate unique filename
-                var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(model.ProfilePicture.FileName)}";
-                var filePath = Path.Combine(uploadDir, fileName);
-
-                // Save file
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await model.ProfilePicture.CopyToAsync(stream);
-                }
-
-                // Delete old file (if exists)
-                if (!string.IsNullOrEmpty(user.ProfilePicturePath))
-                {
-                    var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.ProfilePicturePath);
-                    if (System.IO.File.Exists(oldPath))
-                        System.IO.File.Delete(oldPath);
-                }
-
-                // Save relative path (for display)
-                user.ProfilePicturePath = $"profilepics/{fileName}";
-            }
-
-            await _userManager.UpdateAsync(user);
-
-            TempData["SuccessMessage"] = "Profile updated successfully.";
-            return RedirectToAction("Profile");
-        }
 
 
         [HttpPost]

@@ -13,13 +13,7 @@ using SinetLeaveManagement.Models;
 using SinetLeaveManagement.Models.ViewModels;
 using SinetLeaveManagement.Services;
 using System.Drawing;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using X.PagedList;
 using X.PagedList.Extensions;
-using System.IO;
-using System.Collections.Generic;
 
 namespace SinetLeaveManagement.Controllers
 {
@@ -52,26 +46,44 @@ namespace SinetLeaveManagement.Controllers
         // GET: /Leave
         public async Task<IActionResult> Index(string search, int page = 1)
         {
+            //Get current user
             var user = await _userManager.GetUserAsync(User);
+
+            //Check if Admin or Manager
             bool isAdminOrManager = await _userManager.IsInRoleAsync(user, "Admin")
                 || await _userManager.IsInRoleAsync(user, "Manager");
 
+            // Get all leave requests
             var requests = await _leaveService.GetAllLeaveRequestsAsync();
+
+            //Filter by user role
             var query = isAdminOrManager
                 ? requests.AsQueryable()
                 : requests.Where(l => l.RequestingUserId == user.Id).AsQueryable();
 
-            if (!string.IsNullOrEmpty(search))
+            // Apply search filter (case-insensitive, safe null checks)
+            if (!string.IsNullOrWhiteSpace(search))
             {
+                var lowerSearch = search.ToLower();
                 query = query.Where(l =>
-                    l.Status.Contains(search) ||
-                    l.RequestingUser.FirstName.Contains(search) ||
-                    l.RequestingUser.LastName.Contains(search));
+                    (!string.IsNullOrEmpty(l.Status) && l.Status.ToLower().Contains(lowerSearch)) ||
+                    (l.RequestingUser != null && (
+                        (!string.IsNullOrEmpty(l.RequestingUser.FirstName) && l.RequestingUser.FirstName.ToLower().Contains(lowerSearch)) ||
+                        (!string.IsNullOrEmpty(l.RequestingUser.LastName) && l.RequestingUser.LastName.ToLower().Contains(lowerSearch))
+                    ))
+                );
             }
 
+            //Order and paginate
             var pagedList = query.OrderByDescending(l => l.RequestedAt).ToPagedList(page, 5);
+
+            //Pass current search term back to View
+            ViewBag.CurrentSearch = search;
+
+            //Return view
             return View(pagedList);
         }
+
 
         // GET: /Leave/Create
         [HttpGet]
@@ -274,102 +286,140 @@ namespace SinetLeaveManagement.Controllers
 
             return View(logs);
         }
-
-
+                
+        // ============================================================
+        // EXPORT AUDIT LOGS TO EXCEL
+        // ============================================================
         [Authorize(Roles = "Admin,Manager,HR")]
         public async Task<IActionResult> ExportToExcel(DateTime? startDate, DateTime? endDate, string search)
         {
+            // Get audit logs
             var logs = await _leaveService.GetAuditLogsAsync();
 
+            // Filter by date range
             if (startDate.HasValue)
                 logs = logs.Where(l => l.Timestamp >= startDate.Value).ToList();
 
             if (endDate.HasValue)
                 logs = logs.Where(l => l.Timestamp <= endDate.Value.AddDays(1)).ToList();
 
+            // Search filter
             if (!string.IsNullOrEmpty(search))
                 logs = logs.Where(l =>
                     (l.Action != null && l.Action.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
                     (l.PerformedByUser != null && l.PerformedByUser.UserName.Contains(search, StringComparison.OrdinalIgnoreCase))
                 ).ToList();
 
-            using (var package = new OfficeOpenXml.ExcelPackage())
+            // ============================================================
+            // BUILD EXCEL FILE (REMOVED USING BLOCK TO KEEP STREAM OPEN)
+            // ============================================================
+            var package = new OfficeOpenXml.ExcelPackage();
+            var worksheet = package.Workbook.Worksheets.Add("Audit Logs");
+
+            // Header row
+            worksheet.Cells[1, 1].Value = "Timestamp";
+            worksheet.Cells[1, 2].Value = "Action";
+            worksheet.Cells[1, 3].Value = "Performed By";
+            worksheet.Cells[1, 4].Value = "Leave Request ID";
+            worksheet.Cells[1, 5].Value = "Details";
+
+            // Data rows
+            int row = 2;
+            foreach (var log in logs)
             {
-                var worksheet = package.Workbook.Worksheets.Add("Audit Logs");
-                worksheet.Cells[1, 1].Value = "Timestamp";
-                worksheet.Cells[1, 2].Value = "Action";
-                worksheet.Cells[1, 3].Value = "Performed By";
-                worksheet.Cells[1, 4].Value = "Leave Request ID";
-                worksheet.Cells[1, 5].Value = "Details";
-
-                int row = 2;
-                foreach (var log in logs)
-                {
-                    worksheet.Cells[row, 1].Value = log.Timestamp.ToLocalTime().ToString("g");
-                    worksheet.Cells[row, 2].Value = log.Action;
-                    worksheet.Cells[row, 3].Value = log.PerformedByUser?.UserName;
-                    worksheet.Cells[row, 4].Value = log.LeaveRequestId;
-                    worksheet.Cells[row, 5].Value = log.Details;
-                    row++;
-                }
-
-                var stream = new MemoryStream();
-                package.SaveAs(stream);
-                stream.Position = 0;
-                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "AuditLogs.xlsx");
+                worksheet.Cells[row, 1].Value = log.Timestamp.ToLocalTime().ToString("g");
+                worksheet.Cells[row, 2].Value = log.Action;
+                worksheet.Cells[row, 3].Value = log.PerformedByUser?.UserName;
+                worksheet.Cells[row, 4].Value = log.LeaveRequestId;
+                worksheet.Cells[row, 5].Value = log.Details;
+                row++;
             }
+
+            // ============================================================
+            // WRITE TO MEMORY STREAM
+            // ============================================================
+            var stream = new MemoryStream();
+            package.SaveAs(stream);
+            stream.Position = 0;
+
+            // Optional cleanup
+            package.Dispose();
+
+            // Return file to browser
+            return File(stream,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "AuditLogs.xlsx");
         }
 
 
+        // ============================================================
+        // EXPORT AUDIT LOGS TO PDF
+        // ============================================================
         [Authorize(Roles = "Admin,Manager,HR")]
         public async Task<IActionResult> ExportToPdf(DateTime? startDate, DateTime? endDate, string search)
         {
+            // Get audit logs
             var logs = await _leaveService.GetAuditLogsAsync();
 
+            // Filter by date range
             if (startDate.HasValue)
                 logs = logs.Where(l => l.Timestamp >= startDate.Value).ToList();
 
             if (endDate.HasValue)
                 logs = logs.Where(l => l.Timestamp <= endDate.Value.AddDays(1)).ToList();
 
+            // Search filter
             if (!string.IsNullOrEmpty(search))
                 logs = logs.Where(l =>
                     (l.Action != null && l.Action.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
                     (l.PerformedByUser != null && l.PerformedByUser.UserName.Contains(search, StringComparison.OrdinalIgnoreCase))
                 ).ToList();
 
-            using (var pdf = new PdfSharpCore.Pdf.PdfDocument())
+            // ============================================================
+            // BUILD PDF FILE (REMOVED USING BLOCK TO KEEP STREAM OPEN)
+            // ============================================================
+            var pdf = new PdfSharpCore.Pdf.PdfDocument();
+            var page = pdf.AddPage();
+            var gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
+            var font = new PdfSharpCore.Drawing.XFont("Arial", 10);
+            int y = 40;
+
+            // Title
+            gfx.DrawString("Audit Logs Report",
+                new PdfSharpCore.Drawing.XFont("Arial", 14, PdfSharpCore.Drawing.XFontStyle.Bold),
+                PdfSharpCore.Drawing.XBrushes.Black,
+                new PdfSharpCore.Drawing.XPoint(20, 20));
+
+            // Data rows
+            foreach (var log in logs)
             {
-                var page = pdf.AddPage();
-                var gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
-                var font = new PdfSharpCore.Drawing.XFont("Arial", 10);
-                int y = 40;
+                gfx.DrawString($"{log.Timestamp.ToLocalTime():g} | {log.Action} | {log.PerformedByUser?.UserName} | ID: {log.LeaveRequestId}",
+                    font, PdfSharpCore.Drawing.XBrushes.Black, new PdfSharpCore.Drawing.XPoint(20, y));
+                y += 20;
 
-                gfx.DrawString("Audit Logs Report", new PdfSharpCore.Drawing.XFont("Arial", 14, PdfSharpCore.Drawing.XFontStyle.Bold),
-                               PdfSharpCore.Drawing.XBrushes.Black, new PdfSharpCore.Drawing.XPoint(20, 20));
-
-                foreach (var log in logs)
+                // Add new page if needed
+                if (y > page.Height - 40)
                 {
-                    gfx.DrawString($"{log.Timestamp.ToLocalTime():g} | {log.Action} | {log.PerformedByUser?.UserName} | ID: {log.LeaveRequestId}",
-                        font, PdfSharpCore.Drawing.XBrushes.Black, new PdfSharpCore.Drawing.XPoint(20, y));
-                    y += 20;
-
-                    if (y > page.Height - 40)
-                    {
-                        page = pdf.AddPage();
-                        gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
-                        y = 40;
-                    }
-                }
-
-                using (var stream = new MemoryStream())
-                {
-                    pdf.Save(stream, false);
-                    stream.Position = 0;
-                    return File(stream, "application/pdf", "AuditLogs.pdf");
+                    page = pdf.AddPage();
+                    gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
+                    y = 40;
                 }
             }
+
+            // ============================================================
+            // WRITE TO MEMORY STREAM
+            // ============================================================
+            var stream = new MemoryStream();
+            pdf.Save(stream, false);
+            stream.Position = 0;
+
+            // Optional cleanup
+            pdf.Dispose();
+
+            // Return file to browser
+            return File(stream, "application/pdf", "AuditLogs.pdf");
         }
+
 
 
 
