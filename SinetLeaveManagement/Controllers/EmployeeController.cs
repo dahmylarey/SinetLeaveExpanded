@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,11 +27,11 @@ namespace SinetLeaveManagement.Controllers
         // =========================
         public async Task<IActionResult> Index()
         {
-            var employees = await _context.EmployeeProfiles
+            var profiles = await _context.EmployeeProfiles
                 .Include(e => e.User)
                 .ToListAsync();
 
-            return View(employees);
+            return View(profiles);
         }
 
         [HttpGet]
@@ -70,15 +71,23 @@ namespace SinetLeaveManagement.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(EmployeeProfile profile)
         {
+            // Remove navigation property validation error
+            ModelState.Remove("User");  // 👈 This line is crucial
+
             if (ModelState.IsValid)
             {
                 _context.EmployeeProfiles.Add(profile);
                 await _context.SaveChangesAsync();
+
                 TempData["Success"] = "Employee profile created successfully.";
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.Users = await _userManager.Users.ToListAsync();
+            // Repopulate dropdown list if validation fails
+            ViewBag.Users = await _userManager.Users
+                .Where(u => !_context.EmployeeProfiles.Any(p => p.UserId == u.Id))
+                .ToListAsync();
+
             return View(profile);
         }
 

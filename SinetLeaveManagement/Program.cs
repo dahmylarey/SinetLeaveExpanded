@@ -38,7 +38,10 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // Add custom services
 builder.Services.AddScoped<ILeaveService, LeaveService>();
+builder.Services.AddScoped<IPdfService, PdfService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
 
 // Add SignalR
 builder.Services.AddSignalR();

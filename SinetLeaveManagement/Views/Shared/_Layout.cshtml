@@ -127,11 +127,10 @@
                                 <i class="bi bi-pencil-square me-1"></i> Apply
                             </a>
                         </li>
-                        <li>
-                            <a class="dropdown-item" asp-controller="Employee" asp-action="Index">
-                                <i class="bi bi-list-check me-1"></i> Manage Employees
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewBag.ActivePage == "Apply" ? "active" : "")" asp-controller="Notification" asp-action="Index">
+                                <i class="bi bi-bell fs-5"></i> Notifications
                             </a>
-
                         </li>
                         
                     }
@@ -157,6 +156,12 @@
                                     <a class="dropdown-item" asp-controller="LeaveTypes" asp-action="Index">
                                         <i class="bi bi-list-check me-1"></i> Manage Leave Types
                                     </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Employee" asp-action="Index">
+                                        <i class="bi bi-list-check me-1"></i> Manage Employees Profile
+                                    </a>
+
                                 </li>
                                
                             </ul>
@@ -291,41 +296,7 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <script>
-        $(document).ready(function () {
-            function loadNotifications() {
-                $.get("@Url.Action("UnreadNotifications", "Notification")", function (data) {
-                    var dropdown = $("#notificationDropdown").siblings(".dropdown-menu");
-                    dropdown.empty();
-
-                    if (data.length === 0) {
-                        dropdown.append('<li class="dropdown-item text-center text-muted">No new notifications</li>');
-                        $("#notifCount").text('');
-                    } else {
-                        $("#notifCount").text(data.length);
-
-                        data.forEach(function (notif) {
-                            var item = `<li class="dropdown-item">
-                                            <a href="${notif.url}" class="text-dark text-decoration-none">
-                                                ${notif.message} <br>
-                                                <small class="text-muted">${notif.createdAt}</small>
-                                            </a>
-                                        </li>`;
-                            dropdown.append(item);
-                        });
-                        dropdown.append('<li><hr class="dropdown-divider"></li>');
-                        dropdown.append('<li class="dropdown-item text-center"><a href="@Url.Action("Index", "Notification")">View All</a></li>');
-                    }
-                });
-            }
-
-            // Load notifications on page load
-            loadNotifications();
-
-            // Optional: refresh every 30 seconds
-            setInterval(loadNotifications, 30000);
-        });
-    </script>
+   
 
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
@@ -335,6 +306,44 @@
     <input type="hidden" id="TempDataError" value="@TempData["Error"]" />
 
     <script>
+        $(document).ready(function () {
+            function loadNotifications() {
+                $.get("/Notification", function (data) {
+                    if (typeof data === "string") {
+                        try { data = JSON.parse(data); } catch { return; }
+                    }
+
+                    if (!Array.isArray(data)) return;
+
+                    var dropdown = $("#notificationDropdown").siblings(".dropdown-menu");
+                    dropdown.empty();
+
+                    if (data.length === 0) {
+                        dropdown.append('<li class="dropdown-item text-center text-muted">No new notifications</li>');
+                        $("#notifCount").text('');
+                    } else {
+                        $("#notifCount").text(data.length);
+                        data.forEach(function (notif) {
+                            dropdown.append(`
+                                <li class="dropdown-item">
+                                    <span>${notif.message}</span><br>
+                                    <small class="text-muted">${notif.date}</small>
+                                </li>
+                            `);
+                        });
+                    }
+
+                    dropdown.append('<li><hr class="dropdown-divider"></li>');
+                    dropdown.append('<li class="dropdown-item text-center"><a href="/Notification">View All</a></li>');
+                });
+            }
+
+            loadNotifications();
+            setInterval(loadNotifications, 30000);
+        });
+    </script>
+
+    @* <script>
         $(document).ready(function () {
             function loadNotifications() {
                 $.get("@Url.Action("Index", "Notification")", function (data) {
@@ -368,7 +377,7 @@
             // Optional: refresh every 30 seconds
             setInterval(loadNotifications, 30000);
         });
-    </script>
+    </script> *@
 
 </body>
 </html>

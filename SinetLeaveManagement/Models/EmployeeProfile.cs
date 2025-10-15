@@ -11,7 +11,7 @@ namespace SinetLeaveManagement.Models
 
         [ForeignKey("User")]
         public string UserId { get; set; }
-        public ApplicationUser User { get; set; }
+        public ApplicationUser? User { get; set; }
 
         [StringLength(20)]
         public string? EmployeeNumber { get; set; }  // Internal unique employee code
